@@ -5,12 +5,8 @@ use axum::{
     response::IntoResponse, 
     extract::State,
 };
-use reqwest::{
-    Client
-};
-use http::{ 
-    StatusCode
-};
+use reqwest::Client;
+use http::StatusCode;
 
 pub async fn create_row(
     State(notion_secret): State<TokenWrapper>,
