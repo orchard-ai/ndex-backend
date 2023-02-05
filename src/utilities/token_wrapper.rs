@@ -1,2 +1,5 @@
 #[derive(Clone)]
-pub struct TokenWrapper(pub String);
+pub struct NotionSecret(pub String);
+
+#[derive(Clone)]
+pub struct TypesenseSecret(pub String);
