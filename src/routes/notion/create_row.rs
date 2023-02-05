@@ -1,4 +1,4 @@
-use crate::utilities::token_wrapper::TokenWrapper;
+use crate::utilities::token_wrapper::NotionSecret;
 
 use axum::{
     Json, 
@@ -9,7 +9,7 @@ use reqwest::Client;
 use http::StatusCode;
 
 pub async fn create_row(
-    State(notion_secret): State<TokenWrapper>,
+    State(notion_secret): State<NotionSecret>,
     State(notion_db): State<String>,
 ) -> impl IntoResponse {
     let client = Client::new();

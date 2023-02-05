@@ -5,6 +5,7 @@ Currently working feature:
 - Authentication with Notion:
     - Insert row into Notion Database
     - Can return all objects within Notion Database
+- Create/Retrieve/Delete Typesense schemas from the webserver endpoint
 ## Todos
 - Dynamically query all objects within Notion Database for results with more than 100 objects.
 - Implement OAuth2 login to get the Notion credentials, instead of using .env file.

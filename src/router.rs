@@ -5,6 +5,9 @@ use crate::{
             create_row::create_row, 
             search::search
         },
+        typesense::{
+            create_schema::{create_document_schema, delete_schema, retrieve_all_schema}
+        },
     },
 };
 use axum::{
@@ -15,8 +18,11 @@ use axum::{
 pub fn create_router(app_state: AppState) -> Router {
     Router::new()
         .route("/", get(root))
-        .route("/create_notion_row", post(create_row))
-        .route("/search_notion", get(search))
+        .route("/notion/create_notion_row", post(create_row))
+        .route("/notion/search_notion", get(search))
+        .route("/typesense/create_typesense_schema", get(create_document_schema))
+        .route("/typesense/delete_typesense_schema", get(delete_schema))
+        .route("/typesense/retrieve_typesense_schema", get(retrieve_all_schema))
         .with_state(app_state)
 }
 

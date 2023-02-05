@@ -1,4 +1,4 @@
-use crate::utilities::token_wrapper::TokenWrapper;
+use crate::utilities::token_wrapper::NotionSecret;
 
 use axum::{
     Json, 
@@ -11,7 +11,7 @@ use http::StatusCode;
 use super::{SearchQuery, SearchResponse, Sort};
 
 pub async fn search(
-    State(notion_secret): State<TokenWrapper>,
+    State(notion_secret): State<NotionSecret>,
 ) -> impl IntoResponse {
     let client = Client::new();
     let bearer = format!("Bearer {}", &notion_secret.0);
