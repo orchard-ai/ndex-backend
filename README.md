@@ -14,8 +14,16 @@ Currently working feature:
 1. Have Rust toolchain installed
 2. Create a .env file with NOTION_DATABASE_ID and NOTION_SECRET set.
 3. `cargo run`
+4. Access endpoints on your localhost:3000
 
 Alternatively for development, you can install cargo-watch and have the webserver recompile upon saving any file:
 
 `cargo watch -x run -B 1`
 
+# Endpoints
+- GET "/" -> Hello World
+- POST "/notion/create_notion_row" -> Insert row into Notion DB
+- GET "/notion/search_notion" -> Retrieve all Notion objects in a workspace
+- GET "/typesense/create_typesense_schema" -> Creates a "documents" schema on the local Typesense server
+- GET "/typesense/delete_typesense_schema" -> Deletes "documents" schema on the local Typesense server
+- GET "/typesense/retrieve_typesense_schema" -> Retrieves all schemas on the local Typesense server
