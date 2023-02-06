@@ -14,32 +14,12 @@ pub async fn create_document_schema(
 ) -> impl IntoResponse {
     let client = Client::new();
     let typesense_admin_key = typesense_secret.0.to_owned();
+    let document_schema = generate_document_schema();
 
-    let document_schema = TypesenseCollection {
-        name: "documents".to_string(),
-        num_documents: 0,
-        fields: vec![
-            TypesenseField {
-                name: "title".to_string(),
-                type_field: "string".to_string(),
-                facet: false,
-            },
-            TypesenseField {
-                name: "description".to_string(),
-                type_field: "string".to_string(),
-                facet: false,
-            },
-            TypesenseField {
-                name: "url".to_string(),
-                type_field: "string".to_string(),
-                facet: false,
-            },
-        ],
-        default_sorting_field: "".to_string(),
-    };
     let request = client.post("http://localhost:8108/collections")
         .header("x-typesense-api-key", &typesense_admin_key)
         .json(&document_schema);
+
     let response = request.send()
         .await.unwrap()
         .json::<serde_json::Value>().await.unwrap();
@@ -76,4 +56,49 @@ pub async fn retrieve_all_schema(
         .await.unwrap()
         .json::<serde_json::Value>().await.unwrap();
     (StatusCode::ACCEPTED, Json(response))
+}
+
+fn generate_document_schema() -> TypesenseCollection {
+    TypesenseCollection {
+        name: "documents".to_string(),
+        num_documents: 0,
+        fields: vec![
+            TypesenseField {
+                name: "title".to_string(),
+                type_field: "string".to_string(),
+                facet: false,
+            },
+            TypesenseField {
+                name: "contents".to_string(),
+                type_field: "string".to_string(),
+                facet: false,
+            },
+            TypesenseField {
+                name: "url".to_string(),
+                type_field: "string".to_string(),
+                facet: false,
+            },
+            TypesenseField {
+                name: "platform".to_string(),
+                type_field: "string".to_string(),
+                facet: true,
+            },
+            TypesenseField {
+                name: "type".to_string(),
+                type_field: "string".to_string(),
+                facet: true,
+            },
+            TypesenseField {
+                name: "last_edited_date".to_string(),
+                type_field: "int64".to_string(),
+                facet: false,
+            },
+            TypesenseField {
+                name: "created_date".to_string(),
+                type_field: "int64".to_string(),
+                facet: false,
+            },
+        ],
+        default_sorting_field: "".to_string(),
+    }
 }

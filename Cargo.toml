@@ -7,10 +7,12 @@ edition = "2021"
 
 [dependencies]
 axum = { version = "0.6.4", features = ["macros", "headers"] }
+chrono = "0.4.23"
 dotenv = "0.15.0"
 http = "0.2.8"
 reqwest = {version = "0.11.14", features = ["json"]}
 serde = {version = "1.0.152", features = ["derive"]}
+serde-jsonlines = "0.4.0"
 serde_derive = "1.0.152"
 serde_json = "1.0.91"
 tokio ={version = "1.25.0", features = ["full"]}

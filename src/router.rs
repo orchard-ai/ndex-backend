@@ -6,7 +6,7 @@ use crate::{
             search::search
         },
         typesense::{
-            create_schema::{create_document_schema, delete_schema, retrieve_all_schema}
+            schema_control::{create_document_schema, delete_schema, retrieve_all_schema}
         },
     },
 };

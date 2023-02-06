@@ -1,8 +1,8 @@
 pub mod create_row;
 pub mod search;
 
-use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
+use serde_derive::{Deserialize, Serialize};
 
 /* ------------------- SEARCH QUERY --------------------------- */
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -108,6 +108,8 @@ pub struct Properties {
     #[serde(rename = "Tags")]
     pub tags: Option<Tags>,
     pub title: Option<Title>,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
