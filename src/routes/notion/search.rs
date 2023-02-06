@@ -1,4 +1,4 @@
-use crate::utilities::token_wrapper::NotionSecret;
+use crate::{utilities::token_wrapper::NotionSecret, routes::typesense::TypesenseInsert};
 
 use axum::{
     Json, 
@@ -7,6 +7,7 @@ use axum::{
 };
 use reqwest::Client;
 use http::StatusCode;
+use chrono::{DateTime};
 
 use super::{SearchQuery, SearchResponse, Sort};
 
@@ -32,5 +33,42 @@ pub async fn search(
         .await.unwrap()
         .json::<SearchResponse>().await.unwrap();
 
-    (StatusCode::ACCEPTED, Json(response))
+    let parsed_response = parse_search_response(response);
+    dbg!(&parsed_response);
+    (StatusCode::ACCEPTED, Json(parsed_response))
+}
+
+pub fn parse_search_response(
+    response: SearchResponse,
+) -> Vec<TypesenseInsert> {
+    let mut results: Vec<TypesenseInsert> = Vec::new();
+    for result in response.results {
+        // dbg!(&result);
+        let properties = result.properties;
+        let prop_name = match properties.name {
+            Some(name) => match name.title[0].get("plain_text") {
+                Some(plain_text) => plain_text.to_string(),
+                None => "".to_string(),
+            },
+            None => "".to_string(),
+        };
+        let prop_title = match properties.title {
+            Some(title) => title.title[0].plain_text.to_string(),
+            None => "".to_string(),
+        };
+        // dbg!(&prop_name);
+        // dbg!(&prop_title);
+        if &prop_title == "" && &prop_name == "" {
+            continue;
+        }
+        let title = format!("{}{}", prop_name, prop_title);
+        let contents = "".to_string();
+        let url = result.url;
+        let platform = "notion".to_string();
+        let type_field = result.object.to_string();
+        let last_edited_time = DateTime::parse_from_rfc3339(&result.last_edited_time).unwrap().timestamp();
+        let created_time = DateTime::parse_from_rfc3339(&result.created_time).unwrap().timestamp();
+        results.push(TypesenseInsert { title, contents, url, platform, type_field, last_edited_time, created_time });
+    }
+    results
 }
