@@ -8,20 +8,45 @@ use axum::{
 use reqwest::Client;
 use http::StatusCode;
 use chrono::{DateTime};
+use serde_json::{json, Value};
 
-use super::{SearchQuery, SearchResponse, Sort};
+use super::{SearchResponse, Result};
 
-pub async fn search(
-    State(notion_secret): State<NotionSecret>,
-) -> impl IntoResponse {
+pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl IntoResponse {
     let client = Client::new();
     let bearer = format!("Bearer {}", &notion_secret.0);
+    let mut cursor: Option<String> = None;
+    let mut results: Vec<Result> = vec![];
+    loop {
+        let response = search(client.clone(), bearer.clone(), cursor.clone()).await;
+        for res in response.results {
+            results.push(res);
+        }
+        if response.next_cursor != Value::Null {
+            cursor = Some(response.next_cursor.to_string().replace("\"", ""));
+        } else {
+            break;
+        }
+    }
+    dbg!(&results.len());
+    (StatusCode::OK, Json(results))
+}
 
-    let search_query = SearchQuery {
-        query: "".to_string(),
-        sort: Some( Sort { 
-            direction: "ascending".to_string(),
-            timestamp: "last_edited_time".to_string() }),
+pub async fn search(
+    client: Client,
+    bearer: String,
+    cursor: Option<String>,
+) -> SearchResponse {
+    let search_query = match cursor {
+        Some(uuid) => json!({
+            "query": "",
+            "start_cursor": uuid
+        }),
+        None => { 
+            json!( {
+                "query": "".to_string(),
+            })
+        }
     };
 
     let request = client.post("https://api.notion.com/v1/search")  
@@ -33,9 +58,7 @@ pub async fn search(
         .await.unwrap()
         .json::<SearchResponse>().await.unwrap();
 
-    let parsed_response = parse_search_response(response);
-    dbg!(&parsed_response);
-    (StatusCode::ACCEPTED, Json(parsed_response))
+    response
 }
 
 pub fn parse_search_response(
