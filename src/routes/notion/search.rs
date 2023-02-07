@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{utilities::token_wrapper::NotionSecret, routes::typesense::TypesenseInsert};
 
 use axum::{
@@ -10,24 +12,27 @@ use http::StatusCode;
 use chrono::{DateTime};
 use serde_json::{json, Value};
 
-use super::{SearchResponse, Result};
+use super::{SearchResponse, Result, block_models};
 
 pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl IntoResponse {
     let client = Client::new();
     let bearer = format!("Bearer {}", &notion_secret.0);
     let mut cursor: Option<String> = None;
-    let mut results: Vec<Result> = vec![];
+    let mut results: HashMap<String, TypesenseInsert> = HashMap::new();
     loop {
         let response = search(client.clone(), bearer.clone(), cursor.clone()).await;
-        for res in response.results {
-            results.push(res);
+        let next_cursor = response.next_cursor.clone();
+        let parsed_response = parse_search_response(response);
+        for res in parsed_response {
+            results.insert(res.id.clone(), res);
         }
-        if response.next_cursor != Value::Null {
-            cursor = Some(response.next_cursor.to_string().replace("\"", ""));
+        if next_cursor != Value::Null {
+            cursor = Some(next_cursor.to_string().replace("\"", ""));
         } else {
             break;
         }
     }
+
     dbg!(&results.len());
     (StatusCode::OK, Json(results))
 }
@@ -61,6 +66,56 @@ pub async fn search(
     response
 }
 
+pub async fn get_page_blocks(
+    client: Client,
+    bearer: String,
+    page_id: String
+) -> Vec<block_models::Result> {
+    let mut cursor = None;
+    let mut results: Vec<block_models::Result> = vec![];
+    loop {
+        let response = get_page_blocks_page(client.clone(), bearer.clone(), page_id.clone(), cursor.clone()).await;
+        for res in response.results {
+            results.push(res);
+        }
+        if response.next_cursor != Value::Null {
+            cursor = Some(response.next_cursor.to_string().replace("\"", ""));
+        } else {
+            break;
+        }
+    }
+    results
+}
+
+async fn get_page_blocks_page(
+    client: Client,
+    bearer: String,
+    page_id: String,
+    cursor: Option<String>
+) -> block_models::BlockResponse {
+    let search_query = match cursor {
+        Some(uuid) => json!({
+            "start_cursor": uuid
+        }),
+        None => { 
+            json!( {
+                "query": "".to_string(),
+            })
+        }
+    };
+
+    let request = client.post("https://api.notion.com/v1/blocks/{}/children".replace("{}", &page_id))  
+        .header( "authorization", &bearer )
+        .header( "notion-version", "2022-06-28" )
+        .json(&search_query);
+
+    let response = request.send()
+        .await.unwrap()
+        .json::<block_models::BlockResponse>().await.unwrap();
+
+    response
+}
+
 pub fn parse_search_response(
     response: SearchResponse,
 ) -> Vec<TypesenseInsert> {
@@ -84,14 +139,15 @@ pub fn parse_search_response(
         if &prop_title == "" && &prop_name == "" {
             continue;
         }
-        let title = format!("{}{}", prop_name, prop_title);
-        let contents = "".to_string();
+        let id = result.id;
+        let title = format!("{}{}", prop_name, prop_title).replace("\"", "");
+        let contents = title.clone();
         let url = result.url;
         let platform = "notion".to_string();
         let type_field = result.object.to_string();
         let last_edited_time = DateTime::parse_from_rfc3339(&result.last_edited_time).unwrap().timestamp();
         let created_time = DateTime::parse_from_rfc3339(&result.created_time).unwrap().timestamp();
-        results.push(TypesenseInsert { title, contents, url, platform, type_field, last_edited_time, created_time });
+        results.push(TypesenseInsert { id, title, contents, url, platform, type_field, last_edited_time, created_time });
     }
     results
 }

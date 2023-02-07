@@ -26,6 +26,7 @@ pub struct TypesenseField {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TypesenseInsert {
+    pub id: String,
     pub title: String,
     pub contents: String,
     pub url: String,
