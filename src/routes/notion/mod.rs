@@ -1,5 +1,6 @@
 pub mod create_row;
 pub mod search;
+pub mod block_models;
 
 use serde_json::Value;
 use serde_derive::{Deserialize, Serialize};
