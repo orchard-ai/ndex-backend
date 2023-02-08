@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{utilities::token_wrapper::NotionSecret, routes::typesense::TypesenseInsert};
+use crate::{utilities::token_wrapper::NotionSecret, routes::{typesense::TypesenseInsert}};
 
 use axum::{
     Json, 
@@ -32,6 +32,14 @@ pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl Int
             break;
         }
     }
+    // for (key, value) in &results {
+    //     let blocks = get_page_blocks(client.clone(), bearer.clone(), key.clone()).await;
+    //     for block in blocks {
+    //         if !results.contains_key(&block.id) {
+                
+    //         } 
+    //     }
+    // }
 
     dbg!(&results.len());
     (StatusCode::OK, Json(results))
@@ -62,56 +70,6 @@ pub async fn search(
     let response = request.send()
         .await.unwrap()
         .json::<SearchResponse>().await.unwrap();
-
-    response
-}
-
-pub async fn get_page_blocks(
-    client: Client,
-    bearer: String,
-    page_id: String
-) -> Vec<block_models::Result> {
-    let mut cursor = None;
-    let mut results: Vec<block_models::Result> = vec![];
-    loop {
-        let response = get_page_blocks_page(client.clone(), bearer.clone(), page_id.clone(), cursor.clone()).await;
-        for res in response.results {
-            results.push(res);
-        }
-        if response.next_cursor != Value::Null {
-            cursor = Some(response.next_cursor.to_string().replace("\"", ""));
-        } else {
-            break;
-        }
-    }
-    results
-}
-
-async fn get_page_blocks_page(
-    client: Client,
-    bearer: String,
-    page_id: String,
-    cursor: Option<String>
-) -> block_models::BlockResponse {
-    let search_query = match cursor {
-        Some(uuid) => json!({
-            "start_cursor": uuid
-        }),
-        None => { 
-            json!( {
-                "query": "".to_string(),
-            })
-        }
-    };
-
-    let request = client.post("https://api.notion.com/v1/blocks/{}/children".replace("{}", &page_id))  
-        .header( "authorization", &bearer )
-        .header( "notion-version", "2022-06-28" )
-        .json(&search_query);
-
-    let response = request.send()
-        .await.unwrap()
-        .json::<block_models::BlockResponse>().await.unwrap();
 
     response
 }
