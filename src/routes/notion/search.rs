@@ -1,6 +1,12 @@
 use std::collections::HashMap;
 
-use crate::{utilities::token_wrapper::NotionSecret, routes::{typesense::TypesenseInsert}};
+use crate::{
+    utilities::token_wrapper::NotionSecret, 
+    routes::{
+        typesense::TypesenseInsert, 
+        notion::retrieve_blocks::{get_page_blocks, parse_block_response}
+    }
+};
 
 use axum::{
     Json, 
@@ -32,15 +38,23 @@ pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl Int
             break;
         }
     }
-    // for (key, value) in &results {
-    //     let blocks = get_page_blocks(client.clone(), bearer.clone(), key.clone()).await;
-    //     for block in blocks {
-    //         if !results.contains_key(&block.id) {
-                
-    //         } 
-    //     }
-    // }
-
+    let mut block_results: HashMap<String, TypesenseInsert> = HashMap::new();
+    for (key, parent) in &results {
+        let blocks = get_page_blocks(client.clone(), bearer.clone(), key.clone()).await;
+        for block in blocks {
+            if !results.contains_key(&block.id) {
+                dbg!(format!("fetching for {}: {}", &parent.title, &block.id));
+                let parsed_block = parse_block_response(block, parent.title.clone(), parent.url.clone()).await;
+                match parsed_block {
+                    Some((block_id, parsed_block)) => {
+                        block_results.insert(block_id, parsed_block);
+                    },
+                    None => {}
+                }
+            } 
+        }
+    }
+    results.extend(block_results);
     dbg!(&results.len());
     (StatusCode::OK, Json(results))
 }

@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use crate::{routes::typesense::TypesenseInsert, utilities::token_wrapper::NotionSecret};
 use http::StatusCode;
 use reqwest::Client;
 use chrono::{DateTime};
-use serde_json::{json, Value};
+use serde_json::{Value};
 use axum::{
     Json, 
     response::IntoResponse, 
@@ -56,7 +58,6 @@ async fn get_page_blocks_page(
         "".to_string()
     };
     let req_url = format!("https://api.notion.com/v1/blocks/{}/children{}", &page_id, &cursor_string);
-    dbg!(req_url.clone());
     let request = client
         .get(req_url)
         .header( "authorization", &bearer )
@@ -68,12 +69,54 @@ async fn get_page_blocks_page(
 
     response
 }
-async fn parse_block_response(
-    response: block_models::BlockResponse,
-) -> Vec<TypesenseInsert> {
-    let mut results: Vec<TypesenseInsert> = Vec::new();
-    for result in response.results {
-        let id = result.id;
-    }
-    results
+pub async fn parse_block_response(
+    response: block_models::Result,
+    parent_name: String,
+    parent_url: String,
+) -> Option<(String, TypesenseInsert)> {
+    let block_id = response.id;
+    let block_type = response.type_field.to_string().replace("\"", "");
+    let contents = match block_type.as_str() {
+        "paragraph" | "heading_1" | "heading_2" |
+        "heading_3" | "callout" | "quote" | "bulleted_list_item" | 
+        "numbered_list_item" | "toggle" | "todo" | "code" => {
+            let c = response.extras.get(block_type.as_str())
+            .and_then(|value| value.get("rich_text"))
+            .and_then(|value| value.get(0))
+            .and_then(|value| value.get("plain_text"));
+            match c {
+                Some(c) => {
+                    c.to_string().replace("\"", "")
+                },
+                None => {
+                    // dbg!("No plain text found for block_id: {}", &block_id);
+                    // dbg!(&parent_url);
+                    "".to_string()
+                }
+            }
+        },
+        _ => {
+            "".to_string()
+        },
+    };
+    if contents == "" { return None; }
+    let created_time = DateTime::parse_from_rfc3339(&response.created_time).unwrap().timestamp();
+    let last_edited_time = DateTime::parse_from_rfc3339(&response.last_edited_time).unwrap().timestamp();
+    let url = parent_url;
+    let title = parent_name;
+    Some(
+        (
+            block_id.clone(), 
+            TypesenseInsert {
+                id: block_id,
+                title,
+                contents,
+                url,
+                created_time,
+                last_edited_time,
+                platform: "notion".to_string(),
+                type_field: block_type,
+            }
+        )
+    )
 }
