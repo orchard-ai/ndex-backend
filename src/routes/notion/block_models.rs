@@ -35,15 +35,8 @@ pub struct Result {
     pub archived: bool,
     #[serde(rename = "type")]
     pub type_field: String,
-    #[serde(rename = "child_page")]
-    pub child_page: Option<ChildPage>,
-    pub paragraph: Option<Paragraph>,
-    #[serde(rename = "heading_2")]
-    pub heading_2: Option<Heading2>,
-    #[serde(rename = "heading_3")]
-    pub heading_3: Option<Heading3>,
-    #[serde(rename = "bulleted_list_item")]
-    pub bulleted_list_item: Option<BulletedListItem>,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
