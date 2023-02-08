@@ -36,7 +36,7 @@ pub struct Result {
     #[serde(rename = "type")]
     pub type_field: String,
     #[serde(flatten)]
-    pub extra: serde_json::Map<String, Value>,
+    pub extras: serde_json::Map<String, Value>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
