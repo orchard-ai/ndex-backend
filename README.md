@@ -6,15 +6,16 @@ Currently working feature:
     - Insert row into Notion Database
     - Can return all objects within Notion Database
 - Create/Retrieve/Delete Typesense schemas from the webserver endpoint
+- Dynamically query all objects within Notion Database for results with more than 100 objects:
+    - Gets the pages and database, then gets all the blocks that are contained within the pages and databases
 ## Todos
-- Dynamically query all objects within Notion Database for results with more than 100 objects.
 - Implement OAuth2 login to get the Notion credentials, instead of using .env file.
 
 # How to run
 1. Have Rust toolchain installed
 2. Create a .env file with NOTION_DATABASE_ID and NOTION_SECRET set.
 3. `cargo run`
-4. Access endpoints on your localhost:3000
+4. Access endpoints on your localhost:3001
 
 Alternatively for development, you can install cargo-watch and have the webserver recompile upon saving any file:
 
