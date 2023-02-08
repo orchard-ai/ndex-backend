@@ -18,7 +18,7 @@ use http::StatusCode;
 use chrono::{DateTime};
 use serde_json::{json, Value};
 
-use super::{SearchResponse, Result, block_models};
+use super::{SearchResponse};
 
 pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl IntoResponse {
     let client = Client::new();
