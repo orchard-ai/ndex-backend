@@ -17,6 +17,7 @@ use reqwest::Client;
 use http::StatusCode;
 use chrono::{DateTime};
 use serde_json::{json, Value};
+use serde_jsonlines::write_json_lines;
 
 use super::{SearchResponse};
 
@@ -55,6 +56,7 @@ pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl Int
         }
     }
     results.extend(block_results);
+    write_json_lines("notion_blocks.jsonl", results.values()).unwrap();
     dbg!(&results.len());
     (StatusCode::OK, Json(results))
 }

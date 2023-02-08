@@ -1,4 +1,5 @@
 pub mod schema_control;
+pub mod batch_index;
 
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
@@ -24,7 +25,6 @@ pub struct TypesenseField {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct TypesenseInsert {
     pub id: String,
     pub title: String,
@@ -33,6 +33,8 @@ pub struct TypesenseInsert {
     pub platform: String,
     #[serde(rename = "type")]
     pub type_field: String,
+    #[serde(rename = "last_edited_time")]
     pub last_edited_time: i64,
+    #[serde(rename = "created_time")]
     pub created_time: i64,
 }

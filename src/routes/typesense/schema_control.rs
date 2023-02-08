@@ -89,12 +89,12 @@ fn generate_document_schema() -> TypesenseCollection {
                 facet: true,
             },
             TypesenseField {
-                name: "last_edited_date".to_string(),
+                name: "last_edited_time".to_string(),
                 type_field: "int64".to_string(),
                 facet: false,
             },
             TypesenseField {
-                name: "created_date".to_string(),
+                name: "created_time".to_string(),
                 type_field: "int64".to_string(),
                 facet: false,
             },
