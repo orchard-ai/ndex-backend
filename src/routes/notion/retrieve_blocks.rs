@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{routes::typesense::TypesenseInsert, utilities::token_wrapper::NotionSecret};
 use http::StatusCode;
 use reqwest::Client;
