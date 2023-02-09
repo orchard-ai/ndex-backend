@@ -7,7 +7,7 @@ use crate::{
         },
         typesense::{
             schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
-            batch_index::batch_index,
+            index::{batch_index, single_index},
         },
     },
 };
@@ -25,6 +25,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/typesense/delete_typesense_schema", get(delete_schema))
         .route("/typesense/retrieve_typesense_schema", get(retrieve_all_schema))
         .route("/typesense/batch_index", get(batch_index))
+        .route("/typesense/single_index", post(single_index))
         .with_state(app_state)
 }
 
