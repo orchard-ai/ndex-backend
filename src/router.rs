@@ -9,6 +9,7 @@ use crate::{
             schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
             index::{batch_index, single_index},
         },
+        login::{notion_auth::notion_auth},
     },
 };
 use axum::{
@@ -19,6 +20,7 @@ use axum::{
 pub fn create_router(app_state: AppState) -> Router {
     Router::new()
         .route("/", get(root))
+        .route("/notion/auth", get(notion_auth))
         .route("/notion/search_notion", get(search_all))
         .route("/notion/retrieve_notion_blocks", post(block_query))
         .route("/typesense/create_typesense_schema", get(create_document_schema))
