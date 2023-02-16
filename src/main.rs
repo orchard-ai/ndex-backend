@@ -12,6 +12,9 @@ async fn main() {
     let app_state = AppState {
         typesense_secret: TypesenseSecret(typesense_secret),
         notion_secret: NotionSecret(notion_secret),
+        pkce_code_verifier: None,
+        csrf_state: None,
+        google_auth_client: None,
     };
 
     run(app_state).await;

@@ -1,21 +1,27 @@
 use std::env;
 
+use axum::response::Redirect;
 use axum::{
     Json, 
     response::IntoResponse, 
-    extract::State,
+    Form,
+    extract::State
 };
-use reqwest::Client;
+
 use http::StatusCode;
 
-use oauth2::{basic::BasicClient, revocation::StandardRevocableToken, TokenResponse};
+use oauth2::basic::BasicClient;
 // Alternatively, this can be oauth2::curl::http_client or a custom.
-use oauth2::reqwest::http_client;
 use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
+    AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
     RevocationUrl, Scope, TokenUrl,
 };
-pub async fn notion_auth(
+use serde::{Deserialize, Serialize};
+
+use crate::app_state::AppState;
+
+pub async fn google_auth(
+    State(mut state): State<AppState>
 ) -> impl IntoResponse {
     let google_client_id = ClientId::new(
         env::var("GOOGLE_CLIENT_ID").expect("Missing the GOOGLE_CLIENT_ID environment variable."),
@@ -30,7 +36,7 @@ pub async fn notion_auth(
         .expect("Invalid token endpoint URL");
 
     // Set up the config for the Google OAuth2 process.
-    let client = BasicClient::new(
+    let mut client = BasicClient::new(
         google_client_id,
         Some(google_client_secret),
         auth_url,
@@ -39,14 +45,14 @@ pub async fn notion_auth(
     // This example will be running its own server at localhost:8080.
     // See below for the server implementation.
     .set_redirect_uri(
-        RedirectUrl::new("http://localhost:8080".to_string()).expect("Invalid redirect URL"),
+        RedirectUrl::new("http://localhost:3001/google/auth/response".to_string()).expect("Invalid redirect URL"),
     )
     // Google supports OAuth 2.0 Token Revocation (RFC-7009)
     .set_revocation_uri(
         RevocationUrl::new("https://oauth2.googleapis.com/revoke".to_string())
             .expect("Invalid revocation endpoint URL"),
     );
-
+    state.set_google_auth_client(client.clone());
     // Google supports Proof Key for Code Exchange (PKCE - https://oauth.net/2/pkce/).
     // Create a PKCE code verifier and SHA-256 encode it as a code challenge.
     let (pkce_code_challenge, pkce_code_verifier) = PkceCodeChallenge::new_random_sha256();
@@ -63,10 +69,35 @@ pub async fn notion_auth(
         ))
         .set_pkce_challenge(pkce_code_challenge)
         .url();
-
     println!(
         "Open this URL in your browser:\n{}\n",
         authorize_url.to_string()
     );
+    dbg!(&authorize_url);
     (StatusCode::ACCEPTED, Json(authorize_url.to_string()))
+}
+
+#[derive(Deserialize, Debug, Serialize)]
+pub struct GoogleAuth {
+    state: String,
+    code: String,
+    scope: String,
+    authuser: String,
+    prompt: String,
+}
+
+pub async fn google_auth_sucess(
+    Form(response): Form<GoogleAuth>
+) -> Redirect {
+    dbg!(&response);
+    // let token_response = client
+    //     .exchange_code(code)
+    //     .set_pkce_verifier(pkce_code_verifier)
+    //     .request(http_client);
+
+    // println!(
+    //     "Google returned the following token:\n{:?}\n",
+    //     token_response
+    // );
+    Redirect::to("http://localhost:3001/")
 }

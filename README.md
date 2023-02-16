@@ -39,3 +39,14 @@ Alternatively for development, you can install cargo-watch and have the webserve
 - GET "/typesense/delete_typesense_schema" -> Deletes "documents" schema on the local Typesense server
 - GET "/typesense/retrieve_typesense_schema" -> Retrieves all schemas on the local Typesense server
 - GET "/typesense/batch_index" -> Sends parsed Notion data to Typesense for indexing
+
+# Step-by-step to have a working demo
+1. Install and run Typesense locally (I recommend pulling their Docker Image and running it):
+    - Make sure its running on port 8108
+    - Make sure to keep the admin key
+2. Install the rust toolchain
+3. Create a Notion Dev API Key -> Connect it to a test Notion workspace or Page
+4. In the root folder, create a .env file, add NOTION_SECRET and TYPESENSE_SECRET
+5. execute command `cargo run`
+6. You can now access the endpoints at localhost:3001
+7. 

@@ -1,1 +1,1 @@
-pub mod notion_auth;
+pub mod google_auth;
