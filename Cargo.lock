@@ -720,8 +720,10 @@ dependencies = [
  "serde-jsonlines",
  "serde_derive",
  "serde_json",
+ "serde_urlencoded",
  "tokio",
  "tokio-util",
+ "url",
 ]
 
 [[package]]
