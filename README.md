@@ -19,8 +19,9 @@ Basically MVP endpoints for front-end dev should be complete
 - Use TOML config file instead of .env
 
 # Dev Environment Setup
-- Install and run Typesense locally (I recommend pulling their Docker Image and running it):
+- Install and run Typesense locally (I recommend pulling their [Docker Image](https://hub.docker.com/r/typesense/typesense) and running it):
     - Make sure its running on port 8108
+        - `docker run -p 8108:8108 -v/tmp/data:/data typesense/typesense:0.24.0 --data-dir /data --api-key=xyz`
 - Install the Rust toolchain
 
 # How to run
