@@ -1,5 +1,6 @@
 use std::env;
 
+use axum::headers::authorization::Basic;
 use axum::response::Redirect;
 use axum::{
     Json, 
@@ -35,32 +36,22 @@ pub async fn google_auth(
     let token_url = TokenUrl::new("https://www.googleapis.com/oauth2/v3/token".to_string())
         .expect("Invalid token endpoint URL");
 
-    // Set up the config for the Google OAuth2 process.
-    let mut client = BasicClient::new(
+    let client = BasicClient::new(
         google_client_id,
         Some(google_client_secret),
         auth_url,
         Some(token_url),
     )
-    // This example will be running its own server at localhost:8080.
-    // See below for the server implementation.
     .set_redirect_uri(
         RedirectUrl::new("http://localhost:3001/google/auth/response".to_string()).expect("Invalid redirect URL"),
     )
-    // Google supports OAuth 2.0 Token Revocation (RFC-7009)
     .set_revocation_uri(
         RevocationUrl::new("https://oauth2.googleapis.com/revoke".to_string())
             .expect("Invalid revocation endpoint URL"),
     );
-    state.set_google_auth_client(client.clone());
-    // Google supports Proof Key for Code Exchange (PKCE - https://oauth.net/2/pkce/).
-    // Create a PKCE code verifier and SHA-256 encode it as a code challenge.
     let (pkce_code_challenge, pkce_code_verifier) = PkceCodeChallenge::new_random_sha256();
-
-    // Generate the authorization URL to which we'll redirect the user.
     let (authorize_url, csrf_state) = client
         .authorize_url(CsrfToken::new_random)
-        // This example is requesting access to the "calendar" features and the user's profile.
         .add_scope(Scope::new(
             "https://www.googleapis.com/auth/calendar".to_string(),
         ))
@@ -69,6 +60,11 @@ pub async fn google_auth(
         ))
         .set_pkce_challenge(pkce_code_challenge)
         .url();
+
+    state.set_google_auth_client(client.clone());
+    state.set_pkce_verifier(pkce_code_verifier);
+    state.set_csrf_state(csrf_state);
+
     println!(
         "Open this URL in your browser:\n{}\n",
         authorize_url.to_string()
@@ -87,7 +83,7 @@ pub struct GoogleAuth {
 }
 
 pub async fn google_auth_sucess(
-    Form(response): Form<GoogleAuth>
+    Form(response): Form<GoogleAuth>,
 ) -> Redirect {
     dbg!(&response);
     // let token_response = client
