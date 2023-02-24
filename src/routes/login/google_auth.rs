@@ -1,6 +1,4 @@
 use std::env;
-
-use axum::headers::authorization::Basic;
 use axum::response::Redirect;
 use axum::{
     Json, 
@@ -12,10 +10,11 @@ use axum::{
 use http::StatusCode;
 
 use oauth2::basic::BasicClient;
+use oauth2::reqwest::async_http_client;
 // Alternatively, this can be oauth2::curl::http_client or a custom.
 use oauth2::{
     AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
-    RevocationUrl, Scope, TokenUrl,
+    RevocationUrl, Scope, TokenUrl, PkceCodeVerifier, AuthorizationCode
 };
 use serde::{Deserialize, Serialize};
 
@@ -61,10 +60,9 @@ pub async fn google_auth(
         .set_pkce_challenge(pkce_code_challenge)
         .url();
 
-    state.set_google_auth_client(client.clone());
+    state.set_google_auth_client(client);
     state.set_pkce_verifier(pkce_code_verifier);
     state.set_csrf_state(csrf_state);
-
     println!(
         "Open this URL in your browser:\n{}\n",
         authorize_url.to_string()
@@ -83,17 +81,22 @@ pub struct GoogleAuth {
 }
 
 pub async fn google_auth_sucess(
+    State(state): State<AppState>,
     Form(response): Form<GoogleAuth>,
 ) -> Redirect {
     dbg!(&response);
-    // let token_response = client
-    //     .exchange_code(code)
-    //     .set_pkce_verifier(pkce_code_verifier)
-    //     .request(http_client);
-
-    // println!(
-    //     "Google returned the following token:\n{:?}\n",
-    //     token_response
-    // );
+    let client = state.google_auth_client_wrapper.lock().unwrap().clone().unwrap();
+    dbg!(&client);
+    let pkce_code_verifier = state.pkce_code_verifier_wrapper.lock().unwrap().clone().unwrap().0;
+    dbg!(&pkce_code_verifier);
+    let token_response = client
+        .exchange_code(AuthorizationCode::new(response.code))
+        .set_pkce_verifier(PkceCodeVerifier::new(pkce_code_verifier))
+        .request_async(async_http_client).await;
+    dbg!(&token_response);
+    println!(
+        "Google returned the following token:\n{:?}\n",
+        token_response
+    );
     Redirect::to("http://localhost:3001/")
 }
