@@ -1,9 +1,4 @@
-use oauth2::{
-    Client, 
-    StandardErrorResponse, 
-    basic::{BasicErrorResponseType, BasicTokenType}, 
-    StandardTokenResponse, EmptyExtraTokenFields, StandardRevocableToken, RevocationErrorResponseType, StandardTokenIntrospectionResponse,
-};
+use oauth2::{basic::BasicClient, CsrfToken};
 
 #[derive(Clone)]
 pub struct NotionSecret(pub String);
@@ -15,7 +10,7 @@ pub struct TypesenseSecret(pub String);
 pub struct PkceCodeVerifierWrapper(pub String);
 
 #[derive(Clone)]
-pub struct CsrfTokenWrapper(pub String);
+pub struct CsrfTokenWrapper(pub CsrfToken);
 
 #[derive(Clone)]
-pub struct GoogleAuthClient(pub Client<StandardErrorResponse<BasicErrorResponseType>, StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>, BasicTokenType, StandardTokenIntrospectionResponse<EmptyExtraTokenFields, BasicTokenType>, StandardRevocableToken, StandardErrorResponse<RevocationErrorResponseType>>);
+pub struct GoogleAuthClient(pub BasicClient);

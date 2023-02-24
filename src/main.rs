@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use mentat_backend::{
     app_state::AppState,
     run, utilities::token_wrapper::{NotionSecret, TypesenseSecret},
@@ -12,9 +14,9 @@ async fn main() {
     let app_state = AppState {
         typesense_secret: TypesenseSecret(typesense_secret),
         notion_secret: NotionSecret(notion_secret),
-        pkce_code_verifier: None,
-        csrf_state: None,
-        google_auth_client: None,
+        pkce_code_verifier_wrapper: Arc::new(Mutex::new(None)),
+        csrf_state_wrapper: Arc::new(Mutex::new(None)),
+        google_auth_client_wrapper: Arc::new(Mutex::new(None)),
     };
 
     run(app_state).await;
