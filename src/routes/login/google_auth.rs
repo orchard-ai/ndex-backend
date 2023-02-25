@@ -67,7 +67,6 @@ pub async fn google_auth(
         "Open this URL in your browser:\n{}\n",
         authorize_url.to_string()
     );
-    dbg!(&authorize_url);
     (StatusCode::ACCEPTED, Json(authorize_url.to_string()))
 }
 
@@ -76,7 +75,9 @@ pub struct GoogleAuth {
     state: String,
     code: String,
     scope: String,
+    #[serde(default)]
     authuser: String,
+    #[serde(default)]
     prompt: String,
 }
 
@@ -85,10 +86,13 @@ pub async fn google_auth_sucess(
     Form(response): Form<GoogleAuth>,
 ) -> Redirect {
     dbg!(&response);
+
     let client = state.google_auth_client_wrapper.lock().unwrap().clone().unwrap();
     dbg!(&client);
+
     let pkce_code_verifier = state.pkce_code_verifier_wrapper.lock().unwrap().clone().unwrap().0;
     dbg!(&pkce_code_verifier);
+
     let token_response = client
         .exchange_code(AuthorizationCode::new(response.code))
         .set_pkce_verifier(PkceCodeVerifier::new(pkce_code_verifier))
