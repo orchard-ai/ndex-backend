@@ -17,6 +17,7 @@ async fn main() {
         pkce_code_verifier_wrapper: Arc::new(Mutex::new(None)),
         csrf_state_wrapper: Arc::new(Mutex::new(None)),
         google_auth_client_wrapper: Arc::new(Mutex::new(None)),
+        google_access_code_wrapper: Arc::new(Mutex::new(None)),
     };
 
     run(app_state).await;
