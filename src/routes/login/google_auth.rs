@@ -14,7 +14,7 @@ use oauth2::reqwest::async_http_client;
 // Alternatively, this can be oauth2::curl::http_client or a custom.
 use oauth2::{
     AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
-    RevocationUrl, Scope, TokenUrl, PkceCodeVerifier, AuthorizationCode
+    RevocationUrl, Scope, TokenUrl, PkceCodeVerifier, AuthorizationCode, TokenResponse
 };
 use serde::{Deserialize, Serialize};
 
@@ -82,7 +82,7 @@ pub struct GoogleAuth {
 }
 
 pub async fn google_auth_sucess(
-    State(state): State<AppState>,
+    State(mut state): State<AppState>,
     Form(response): Form<GoogleAuth>,
 ) -> Redirect {
     dbg!(&response);
@@ -98,9 +98,14 @@ pub async fn google_auth_sucess(
         .set_pkce_verifier(PkceCodeVerifier::new(pkce_code_verifier))
         .request_async(async_http_client).await;
     dbg!(&token_response);
-    println!(
-        "Google returned the following token:\n{:?}\n",
-        token_response
-    );
+    match token_response {
+        Ok(token) => {
+            let access_code = token.access_token();
+            state.set_google_access_code(access_code.clone());
+            println!("Google returned the following token:\n{:?}\n", access_code);
+        },
+        Err(e) => println!("Google returned an error:\n{:?}\n", e),
+    }
+    
     Redirect::to("http://localhost:3001/")
 }
