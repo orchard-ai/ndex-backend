@@ -18,7 +18,7 @@ use http::HeaderValue;
 use tower_http::cors::CorsLayer;
 pub fn create_router(app_state: AppState) -> Router {
     let cors =
-        CorsLayer::new().allow_origin("https://localhost:5173".parse::<HeaderValue>().unwrap());
+        CorsLayer::new().allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap());
     Router::new()
         .route("/", get(root))
         .route("/google/auth", get(google_auth))
