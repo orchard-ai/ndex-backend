@@ -50,4 +50,3 @@ Alternatively for development, you can install cargo-watch and have the webserve
 4. In the root folder, create a .env file, add NOTION_SECRET and TYPESENSE_SECRET
 5. execute command `cargo run`
 6. You can now access the endpoints at localhost:3001
-7. 
