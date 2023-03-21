@@ -5,7 +5,7 @@ Mentat backend webserver in Rust.
 Run the following commands in your terminal:
 - Install [Rust](https://www.rust-lang.org/tools/install), run this command and follow the instructions that appear in the terminal: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 - Install Docker
-- Pull Typesense [image](https://hub.docker.com/r/typesense/typesense), this is the Search API we use (in terminal): `docker pull typesense/typesense:0.24.0`
+- Pull Typesense [image](https://hub.docker.com/r/typesense/typesense), this is the Search API we use: `docker pull typesense/typesense:0.24.0`
 - Run Typesense (Keep open): `docker run -p 8108:8108 -v/tmp/data:/data typesense/typesense:0.24.0 --data-dir /data --api-key=xyz`
 - Install the Rust VSCode extension to prevent having to recompile upon code changes: install Cargo Watch then run `cargo watch -x run -B 1`
 - Create a `.env` file (ask Pan for the dev notion secret):
