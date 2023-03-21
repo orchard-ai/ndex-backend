@@ -1,5 +1,5 @@
-# Mentat Backend
-Mentat backend webserver in Rust.
+# ndex Backend
+ndex backend webserver in Rust using the Axum web framework.
 
 # Dev Environment Setup (Mac/Linux. For Windows, install Ubuntu)
 Run the following commands in your terminal:
