@@ -1,7 +1,28 @@
 # Mentat Backend
 Mentat backend webserver in Rust.
 
-Currently working feature:
+# Dev Environment Setup (Mac/Linux. For Windows, install Ubuntu)
+Run the following commands in your terminal:
+- Install [Rust](https://www.rust-lang.org/tools/install), run this command and follow the instructions that appear in the terminal: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+- Install Docker
+- Pull Typesense [image](https://hub.docker.com/r/typesense/typesense), this is the Search API we use (in terminal): `docker pull typesense/typesense:0.24.0`
+- Run Typesense (Keep open): `docker run -p 8108:8108 -v/tmp/data:/data typesense/typesense:0.24.0 --data-dir /data --api-key=xyz`
+- Install the Rust VSCode extension to prevent having to recompile upon code changes: install Cargo Watch then run `cargo watch -x run -B 1`
+- Create a `.env` file (ask Pan for the dev notion secret):
+    ```
+    NOTION_SECRET=
+    TYPESENSE_SECRET=xyz
+    ```
+- Run backend Rust server: `cargo run`
+- Access endpoints through http://www.localhost:3001
+- Finally, to connect with frontend, run the frontend, go to the settings page on the UI and click on "Connect Backend". It may take a minute or two.
+
+# Todos
+- Implement OAuth2 login to get the Notion credentials, instead of using .env file.
+- Dynamically define the schema name/properties
+- Use TOML config file instead of .env
+
+# Currently working feature:
 - Authentication with Notion:
     - Insert row into Notion Database
     - Can return all objects within Notion Database
@@ -13,26 +34,6 @@ Currently working feature:
 
 Basically MVP endpoints for front-end dev should be complete
 
-## Todos
-- Implement OAuth2 login to get the Notion credentials, instead of using .env file.
-- Dynamically define the schema name/properties
-- Use TOML config file instead of .env
-
-# Dev Environment Setup
-- Install and run Typesense locally (I recommend pulling their [Docker Image](https://hub.docker.com/r/typesense/typesense) and running it):
-    - Make sure its running on port 8108
-        - `docker run -p 8108:8108 -v/tmp/data:/data typesense/typesense:0.24.0 --data-dir /data --api-key=xyz`
-- Install the Rust toolchain
-
-# How to run
-1. Create a .env file and NOTION_SECRET and TYPESENSE_SECRET set.
-2. `cargo run`
-3. Access endpoints on your localhost:3001
-
-Alternatively for development, you can install cargo-watch and have the webserver recompile upon saving any file:
-
-`cargo watch -x run -B 1`
-
 # Endpoints
 - GET "/" -> Hello World
 - GET "/notion/search_notion" -> Retrieve all Notion objects in a workspace, parses them, and saves them in a JSONL file locally
@@ -40,13 +41,3 @@ Alternatively for development, you can install cargo-watch and have the webserve
 - GET "/typesense/delete_typesense_schema" -> Deletes "documents" schema on the local Typesense server
 - GET "/typesense/retrieve_typesense_schema" -> Retrieves all schemas on the local Typesense server
 - GET "/typesense/batch_index" -> Sends parsed Notion data to Typesense for indexing
-
-# Step-by-step to have a working demo
-1. Install and run Typesense locally (I recommend pulling their Docker Image and running it):
-    - Make sure its running on port 8108
-    - Make sure to keep the admin key
-2. Install the rust toolchain
-3. Create a Notion Dev API Key -> Connect it to a test Notion workspace or Page
-4. In the root folder, create a .env file, add NOTION_SECRET and TYPESENSE_SECRET
-5. execute command `cargo run`
-6. You can now access the endpoints at localhost:3001
