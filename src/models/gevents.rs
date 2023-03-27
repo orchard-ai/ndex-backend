@@ -4,15 +4,15 @@ use serde_derive::Serialize;
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EventsList {
-    pub access_role: String,
-    pub default_reminders: Vec<DefaultReminder>,
-    pub etag: String,
-    pub items: Vec<Event>,
-    pub kind: String,
-    pub next_sync_token: String,
-    pub summary: String,
-    pub time_zone: String,
-    pub updated: String,
+    pub access_role: Option<String>,
+    pub default_reminders: Option<Vec<DefaultReminder>>,
+    pub etag: Option<String>,
+    pub items: Option<Vec<Event>>,
+    pub kind: Option<String>,
+    pub next_sync_token: Option<String>,
+    pub summary: Option<String>,
+    pub time_zone: Option<String>,
+    pub updated: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

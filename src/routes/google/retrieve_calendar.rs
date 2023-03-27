@@ -23,13 +23,17 @@ pub async fn retrieve_calendar_list(
         .unwrap();
     let calendar: GCalendarList = response.json().await.unwrap();
     dbg!(&calendar);
+    let mut events: Vec<EventsList> = vec![];
+    for cal in &calendar.items {
+        let calendar_id = cal.id.to_string();
+        let event_list = retrieve_events(calendar_id, state.clone()).await;
+        events.push(event_list);
+    }
+    dbg!(events);
     (StatusCode::OK, Json(calendar))
 }
 
-pub async fn retrieve_events(
-    calendar_id: String,
-    state: AppState,
-) -> (StatusCode, Json<EventsList>) {
+pub async fn retrieve_events(calendar_id: String, state: AppState) -> EventsList {
     let access_code = state
         .clone()
         .google_access_code_wrapper
@@ -47,5 +51,5 @@ pub async fn retrieve_events(
         .unwrap();
     let events: EventsList = response.json().await.unwrap();
     dbg!(&events);
-    (StatusCode::OK, Json(events))
+    return events;
 }
