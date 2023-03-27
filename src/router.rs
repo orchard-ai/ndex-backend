@@ -1,7 +1,7 @@
 use crate::{
     app_state::AppState,
     routes::{
-        google::retrieve_calendar::retrieve_calendar_list,
+        google::retrieve_calendar::{retrieve_calendar_list, retrieve_events},
         login::google_auth::{google_auth, google_auth_sucess},
         notion::{retrieve_blocks::block_query, search::search_all},
         typesense::{
