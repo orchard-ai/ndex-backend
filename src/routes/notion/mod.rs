@@ -1,9 +1,9 @@
-pub mod search;
 pub mod block_models;
 pub mod retrieve_blocks;
+pub mod search;
 
-use serde_json::Value;
 use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
 
 /* ------------------- SEARCH QUERY --------------------------- */
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -32,7 +32,7 @@ pub struct Sort {
 #[serde(rename_all = "camelCase")]
 pub struct SearchResponse {
     #[serde(rename = "has_more")]
-    pub has_more: bool,
+    pub has_more: Option<bool>,
     #[serde(rename = "next_cursor")]
     pub next_cursor: Value,
     pub object: String,
@@ -45,8 +45,7 @@ pub struct SearchResponse {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PageOrDatabase {
-}
+pub struct PageOrDatabase {}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
