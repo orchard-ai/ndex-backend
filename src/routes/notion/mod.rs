@@ -32,7 +32,7 @@ pub struct Sort {
 #[serde(rename_all = "camelCase")]
 pub struct SearchResponse {
     #[serde(rename = "has_more")]
-    pub has_more: Option<bool>,
+    pub has_more: bool,
     #[serde(rename = "next_cursor")]
     pub next_cursor: Value,
     pub object: String,
