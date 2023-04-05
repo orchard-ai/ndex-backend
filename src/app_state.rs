@@ -1,11 +1,12 @@
 use std::sync::{Arc, Mutex};
 
 use crate::utilities::token_wrapper::{
-    NotionSecret, TypesenseSecret, CsrfTokenWrapper, PkceCodeVerifierWrapper, GoogleAccessCodeWrapper
+    CsrfTokenWrapper, GoogleAccessCodeWrapper, NotionSecret, PkceCodeVerifierWrapper,
+    TypesenseSecret,
 };
-use oauth2::basic::BasicClient;
-use oauth2::{PkceCodeVerifier, CsrfToken, AccessToken};
 use axum::extract::FromRef;
+use oauth2::basic::BasicClient;
+use oauth2::{AccessToken, CsrfToken, PkceCodeVerifier};
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
@@ -20,7 +21,9 @@ pub struct AppState {
 impl AppState {
     pub fn set_pkce_verifier(&mut self, pkce_code_verifier: PkceCodeVerifier) {
         let mut pkce_code_verifier_wrapper = self.pkce_code_verifier_wrapper.lock().unwrap();
-        *pkce_code_verifier_wrapper = Some(PkceCodeVerifierWrapper(pkce_code_verifier.secret().to_string()));
+        *pkce_code_verifier_wrapper = Some(PkceCodeVerifierWrapper(
+            pkce_code_verifier.secret().to_string(),
+        ));
     }
 
     pub fn set_csrf_state(&mut self, csrf_state: CsrfToken) {
