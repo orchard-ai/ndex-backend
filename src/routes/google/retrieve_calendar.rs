@@ -1,18 +1,18 @@
 use crate::models::gcalendar::GCalendarList;
 use crate::{app_state::AppState, models::gevents::EventsList};
 
+use axum::response::IntoResponse;
 use axum::{extract::State, Json};
 use http::StatusCode;
 
-pub async fn retrieve_calendar_list(
-    State(state): State<AppState>,
-) -> (StatusCode, Json<GCalendarList>) {
+pub async fn retrieve_calendar_list(State(state): State<AppState>) -> impl IntoResponse {
     let access_code = state
         .clone()
         .google_access_code_wrapper
         .lock()
-        .unwrap()
-        .clone()
+        .unwrap() // or use expect() to provide a custom error message
+        .as_ref()
+        .map(|wrapper| wrapper.clone())
         .unwrap();
     let client = reqwest::Client::new();
     let response = client
@@ -29,8 +29,8 @@ pub async fn retrieve_calendar_list(
         let event_list = retrieve_events(calendar_id, state.clone()).await;
         events.push(event_list);
     }
-    dbg!(events);
-    (StatusCode::OK, Json(calendar))
+    dbg!(&events);
+    (StatusCode::OK, Json(events))
 }
 
 pub async fn retrieve_events(calendar_id: String, state: AppState) -> EventsList {
