@@ -1,27 +1,23 @@
 use std::collections::HashMap;
 
 use crate::{
-    utilities::token_wrapper::NotionSecret, 
     routes::{
-        typesense::TypesenseInsert, 
-        notion::retrieve_blocks::{get_page_blocks, parse_block_response}
-    }
+        notion::retrieve_blocks::{get_page_blocks, parse_block_response},
+        typesense::TypesenseInsert,
+    },
+    utilities::token_wrapper::NotionSecret,
 };
 
-use axum::{
-    Json, 
-    response::IntoResponse, 
-    extract::State,
-};
-use reqwest::Client;
+use axum::{extract::State, response::IntoResponse, Json};
+use chrono::DateTime;
 use http::StatusCode;
-use chrono::{DateTime};
+use reqwest::Client;
 use serde_json::{json, Value};
 use serde_jsonlines::write_json_lines;
 
-use super::{SearchResponse};
+use super::SearchResponse;
 
-pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl IntoResponse {
+pub async fn search_all(State(notion_secret): State<NotionSecret>) -> impl IntoResponse {
     let client = Client::new();
     let bearer = format!("Bearer {}", &notion_secret.0);
     let mut cursor: Option<String> = None;
@@ -45,14 +41,15 @@ pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl Int
         for block in blocks {
             if !results.contains_key(&block.id) {
                 dbg!(format!("fetching for {}: {}", &parent.title, &block.id));
-                let parsed_block = parse_block_response(block, parent.title.clone(), parent.url.clone()).await;
+                let parsed_block =
+                    parse_block_response(block, parent.title.clone(), parent.url.clone()).await;
                 match parsed_block {
                     Some((block_id, parsed_block)) => {
                         block_results.insert(block_id, parsed_block);
-                    },
+                    }
                     None => {}
                 }
-            } 
+            }
         }
     }
     results.extend(block_results);
@@ -61,38 +58,37 @@ pub async fn search_all( State(notion_secret): State<NotionSecret> ) -> impl Int
     (StatusCode::OK, Json(results))
 }
 
-pub async fn search(
-    client: Client,
-    bearer: String,
-    cursor: Option<String>,
-) -> SearchResponse {
+pub async fn search(client: Client, bearer: String, cursor: Option<String>) -> SearchResponse {
     let search_query = match cursor {
         Some(uuid) => json!({
             "query": "",
             "start_cursor": uuid
         }),
-        None => { 
+        None => {
             json!( {
                 "query": "".to_string(),
             })
         }
     };
 
-    let request = client.post("https://api.notion.com/v1/search")  
-        .header( "authorization", &bearer )
-        .header( "notion-version", "2022-06-28" )
+    let request = client
+        .post("https://api.notion.com/v1/search")
+        .header("authorization", &bearer)
+        .header("notion-version", "2022-06-28")
         .json(&search_query);
 
-    let response = request.send()
-        .await.unwrap()
-        .json::<SearchResponse>().await.unwrap();
+    let response = request
+        .send()
+        .await
+        .unwrap()
+        .json::<SearchResponse>()
+        .await
+        .unwrap();
 
     response
 }
 
-pub fn parse_search_response(
-    response: SearchResponse,
-) -> Vec<TypesenseInsert> {
+pub fn parse_search_response(response: SearchResponse) -> Vec<TypesenseInsert> {
     let mut results: Vec<TypesenseInsert> = Vec::new();
     for result in response.results {
         // dbg!(&result);
@@ -119,9 +115,22 @@ pub fn parse_search_response(
         let url = result.url;
         let platform = "notion".to_string();
         let type_field = result.object.to_string();
-        let last_edited_time = DateTime::parse_from_rfc3339(&result.last_edited_time).unwrap().timestamp();
-        let created_time = DateTime::parse_from_rfc3339(&result.created_time).unwrap().timestamp();
-        results.push(TypesenseInsert { id, title, contents, url, platform, type_field, last_edited_time, created_time });
+        let last_edited_time = DateTime::parse_from_rfc3339(&result.last_edited_time)
+            .unwrap()
+            .timestamp();
+        let created_time = DateTime::parse_from_rfc3339(&result.created_time)
+            .unwrap()
+            .timestamp();
+        results.push(TypesenseInsert {
+            id,
+            title,
+            contents,
+            url,
+            platform,
+            type_field,
+            last_edited_time,
+            created_time,
+        });
     }
     results
 }

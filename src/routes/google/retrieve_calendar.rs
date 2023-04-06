@@ -1,13 +1,15 @@
 use crate::models::gcalendar::GCalendarList;
+use crate::routes::typesense::TypesenseInsert;
 use crate::{app_state::AppState, models::gevents::EventsList};
 
 use axum::response::IntoResponse;
 use axum::{extract::State, Json};
+use chrono::DateTime;
 use http::StatusCode;
+use serde_jsonlines::write_json_lines;
 
 pub async fn retrieve_calendar_list(State(state): State<AppState>) -> impl IntoResponse {
     let access_code = state
-        .clone()
         .google_access_code_wrapper
         .lock()
         .unwrap() // or use expect() to provide a custom error message
@@ -29,8 +31,9 @@ pub async fn retrieve_calendar_list(State(state): State<AppState>) -> impl IntoR
         let event_list = retrieve_events(calendar_id, state.clone()).await;
         events.push(event_list);
     }
-    dbg!(&events);
-    (StatusCode::OK, Json(events))
+    let event_inserts = parse_events(events);
+    write_json_lines("google_calendar_events.jsonl", &event_inserts).unwrap();
+    (StatusCode::OK, Json(event_inserts))
 }
 
 pub async fn retrieve_events(calendar_id: String, state: AppState) -> EventsList {
@@ -52,4 +55,41 @@ pub async fn retrieve_events(calendar_id: String, state: AppState) -> EventsList
     let events: EventsList = response.json().await.unwrap();
     dbg!(&events);
     return events;
+}
+
+fn parse_events(events: Vec<EventsList>) -> Vec<TypesenseInsert> {
+    let mut all_events = vec![];
+    for event_list in events {
+        if event_list.items.is_some() {
+            for event in event_list.items.unwrap() {
+                let id = event.id;
+                let title = event.summary;
+                let contents = format!(
+                    "{} \n {}",
+                    event.location.unwrap_or("".to_string()),
+                    event.description.unwrap_or("".to_string())
+                );
+                let url = event.html_link;
+                let created_time = DateTime::parse_from_rfc3339(&event.created)
+                    .unwrap()
+                    .timestamp();
+                let last_edited_time = DateTime::parse_from_rfc3339(&event.created)
+                    .unwrap()
+                    .timestamp();
+                let platform = "google_calendar".to_string();
+                let type_field = "google_event".to_string();
+                all_events.push(TypesenseInsert {
+                    id,
+                    title,
+                    contents,
+                    url,
+                    created_time,
+                    last_edited_time,
+                    platform,
+                    type_field,
+                });
+            }
+        }
+    }
+    all_events
 }

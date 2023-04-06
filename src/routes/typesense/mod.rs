@@ -1,5 +1,5 @@
-pub mod schema_control;
 pub mod index;
+pub mod schema_control;
 
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
