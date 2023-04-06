@@ -1,36 +1,43 @@
-use tokio::fs;
-use crate::{utilities::token_wrapper::TypesenseSecret};
-use axum::{
-    response::IntoResponse, 
-    extract::State, Json,
-};
-use reqwest::{Client};
+use crate::utilities::token_wrapper::TypesenseSecret;
+use axum::{extract::State, response::IntoResponse, Json};
 use http::StatusCode;
+use reqwest::Client;
+use tokio::fs;
 
 use super::TypesenseInsert;
 
-pub async fn batch_index( State(typesense_secret): State<TypesenseSecret> ) -> impl IntoResponse {
+pub async fn batch_index(State(typesense_secret): State<TypesenseSecret>) -> impl IntoResponse {
     let client = Client::new();
     let typesense_admin_key = typesense_secret.0.to_owned();
-    let file = fs::read_to_string("notion_blocks.jsonl").await.unwrap();
-    dbg!(&file);
-    let request = client
+    let notion_file = fs::read_to_string("notion_blocks.jsonl").await.unwrap();
+    dbg!(&notion_file);
+    let notion_request = client
         .post("http://localhost:8108/collections/documents/documents/import?action=create")
         .header("x-typesense-api-key", &typesense_admin_key)
-        .body(file);
-    let response = request.send().await.unwrap();
-    dbg!(&response);
-    if response.status() == StatusCode::OK {
+        .body(notion_file);
+    let notion_response = notion_request.send().await.unwrap();
+    dbg!(&notion_response);
+
+    let google_calendar_file = fs::read_to_string("google_calendar_events.jsonl")
+        .await
+        .unwrap();
+    let google_calendar_request = client
+        .post("http://localhost:8108/collections/documents/documents/import?action=create")
+        .header("x-typesense-api-key", &typesense_admin_key)
+        .body(google_calendar_file);
+    let google_response = google_calendar_request.send().await.unwrap();
+    dbg!(&google_response);
+    if notion_response.status() == StatusCode::OK {
         return (StatusCode::OK, "Success");
     } else {
         return (StatusCode::INTERNAL_SERVER_ERROR, "Error");
     }
 }
 
-pub async fn single_index ( 
+pub async fn single_index(
     State(typesense_secret): State<TypesenseSecret>,
     Json(ts_insert): Json<TypesenseInsert>,
- ) -> impl IntoResponse {
+) -> impl IntoResponse {
     let client = Client::new();
     let typesense_admin_key = typesense_secret.0.to_owned();
     let request = client
