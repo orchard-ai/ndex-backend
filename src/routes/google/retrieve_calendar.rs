@@ -5,7 +5,7 @@ use crate::{app_state::AppState, models::gevents::EventsList};
 use axum::response::IntoResponse;
 use axum::{extract::State, Json};
 use chrono::DateTime;
-use http::StatusCode;
+use http::{HeaderMap, StatusCode};
 use serde_jsonlines::write_json_lines;
 
 pub async fn retrieve_calendar_list(State(state): State<AppState>) -> impl IntoResponse {
@@ -20,6 +20,36 @@ pub async fn retrieve_calendar_list(State(state): State<AppState>) -> impl IntoR
     let response = client
         .get("https://www.googleapis.com/calendar/v3/users/me/calendarList")
         .bearer_auth(access_code.0.secret().to_string())
+        .send()
+        .await
+        .unwrap();
+    let calendar: GCalendarList = response.json().await.unwrap();
+    dbg!(&calendar);
+    let mut events: Vec<EventsList> = vec![];
+    for cal in &calendar.items {
+        let calendar_id = cal.id.to_string();
+        let event_list = retrieve_events(calendar_id, state.clone()).await;
+        events.push(event_list);
+    }
+    let event_inserts = parse_events(events);
+    write_json_lines("google_calendar_events.jsonl", &event_inserts).unwrap();
+    (StatusCode::OK, Json(event_inserts))
+}
+
+pub async fn code_retrieve_calendar_list(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let access_code = match headers.get("google_access_code") {
+        Some(header_value) => header_value.to_str().unwrap().to_string(),
+        None => {
+            return (StatusCode::BAD_REQUEST, Json(vec![]));
+        }
+    };
+    let client = reqwest::Client::new();
+    let response = client
+        .get("https://www.googleapis.com/calendar/v3/users/me/calendarList")
+        .bearer_auth(access_code)
         .send()
         .await
         .unwrap();
