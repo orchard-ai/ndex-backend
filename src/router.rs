@@ -1,7 +1,7 @@
 use crate::{
     app_state::AppState,
     routes::{
-        google::retrieve_calendar::retrieve_calendar_list,
+        google::retrieve_calendar::{code_retrieve_calendar_list, retrieve_calendar_list},
         login::google_auth::{google_auth, google_auth_sucess},
         notion::{retrieve_blocks::block_query, search::search_all},
         typesense::{
@@ -14,8 +14,10 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use http::HeaderValue;
+use http::{HeaderMap, HeaderValue};
+use tower_http::add_extension::AddExtensionLayer;
 use tower_http::cors::CorsLayer;
+
 pub fn create_router(app_state: AppState) -> Router {
     let cors =
         CorsLayer::new().allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap());
@@ -24,6 +26,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
         .route("/google/calendar", get(retrieve_calendar_list))
+        .route("/google/calendar/code", get(code_retrieve_calendar_list))
         .route("/notion/search_notion", get(search_all))
         .route("/notion/retrieve_notion_blocks", post(block_query))
         .route(
@@ -38,6 +41,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/typesense/batch_index", get(batch_index))
         .route("/typesense/single_index", post(single_index))
         .with_state(app_state)
+        .layer(AddExtensionLayer::new(HeaderMap::new())) // Add middleware to extract headers from the request
         .layer(cors)
 }
 
