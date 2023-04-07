@@ -84,21 +84,10 @@ pub async fn google_auth_sucess(
 ) -> Redirect {
     dbg!(&response);
 
-    let client = state
-        .google_auth_client_wrapper
-        .lock()
-        .unwrap()
-        .clone()
-        .unwrap();
+    let client = state.get_google_client();
     dbg!(&client);
 
-    let pkce_code_verifier = state
-        .pkce_code_verifier_wrapper
-        .lock()
-        .unwrap()
-        .clone()
-        .unwrap()
-        .0;
+    let pkce_code_verifier = state.get_pkce_verifier();
     dbg!(&pkce_code_verifier);
 
     let token_response = client

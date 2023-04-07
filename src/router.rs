@@ -3,7 +3,7 @@ use crate::{
     routes::{
         google::{
             retrieve_calendar::{code_retrieve_calendar_list, retrieve_calendar_list},
-            retrieve_mail::retrieve_mail,
+            retrieve_mail::retrieve_messages_list,
         },
         login::google_auth::{google_auth, google_auth_sucess},
         notion::{retrieve_blocks::block_query, search::search_all},
@@ -30,7 +30,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/google/auth/response", get(google_auth_sucess))
         .route("/google/calendar", get(retrieve_calendar_list))
         .route("/google/calendar/code", get(code_retrieve_calendar_list))
-        .route("/google/mail", get(retrieve_mail))
+        .route("/google/mail", get(retrieve_messages_list))
         .route("/notion/search_notion", get(search_all))
         .route("/notion/retrieve_notion_blocks", post(block_query))
         .route(

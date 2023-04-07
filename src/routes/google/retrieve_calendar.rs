@@ -9,17 +9,11 @@ use http::{HeaderMap, StatusCode};
 use serde_jsonlines::write_json_lines;
 
 pub async fn retrieve_calendar_list(State(state): State<AppState>) -> impl IntoResponse {
-    let access_code = state
-        .google_access_code_wrapper
-        .lock()
-        .unwrap() // or use expect() to provide a custom error message
-        .as_ref()
-        .map(|wrapper| wrapper.clone())
-        .unwrap();
+    let access_code = state.get_google_access_code();
     let client = reqwest::Client::new();
     let response = client
         .get("https://www.googleapis.com/calendar/v3/users/me/calendarList")
-        .bearer_auth(access_code.0.secret().to_string())
+        .bearer_auth(access_code)
         .send()
         .await
         .unwrap();
@@ -67,18 +61,12 @@ pub async fn code_retrieve_calendar_list(
 }
 
 pub async fn retrieve_events(calendar_id: String, state: AppState) -> EventsList {
-    let access_code = state
-        .clone()
-        .google_access_code_wrapper
-        .lock()
-        .unwrap()
-        .clone()
-        .unwrap();
+    let access_code = state.get_google_access_code();
     let client = reqwest::Client::new();
     let url = format!("https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events/");
     let response = client
         .get(url)
-        .bearer_auth(access_code.0.secret().to_string())
+        .bearer_auth(access_code)
         .send()
         .await
         .unwrap();
