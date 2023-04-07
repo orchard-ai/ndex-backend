@@ -46,7 +46,10 @@ pub async fn google_auth(State(mut state): State<AppState>) -> impl IntoResponse
     let (authorize_url, csrf_state) = client
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new(
-            "https://www.googleapis.com/auth/calendar".to_string(),
+            "https://www.googleapis.com/auth/calendar.readonly".to_string(),
+        ))
+        .add_scope(Scope::new(
+            "https://www.googleapis.com/auth/gmail.readonly".to_string(),
         ))
         .add_scope(Scope::new(
             "https://www.googleapis.com/auth/plus.me".to_string(),
