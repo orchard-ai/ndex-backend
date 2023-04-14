@@ -91,7 +91,6 @@ pub async fn search(client: Client, bearer: String, cursor: Option<String>) -> S
 pub fn parse_search_response(response: SearchResponse) -> Vec<TypesenseInsert> {
     let mut results: Vec<TypesenseInsert> = Vec::new();
     for result in response.results {
-        // dbg!(&result);
         let properties = result.properties;
         let prop_name = match properties.name {
             Some(name) => match name.title[0].get("plain_text") {
@@ -104,8 +103,6 @@ pub fn parse_search_response(response: SearchResponse) -> Vec<TypesenseInsert> {
             Some(title) => title.title[0].plain_text.to_string(),
             None => "".to_string(),
         };
-        // dbg!(&prop_name);
-        // dbg!(&prop_title);
         if &prop_title == "" && &prop_name == "" {
             continue;
         }
