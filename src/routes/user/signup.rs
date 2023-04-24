@@ -1,7 +1,6 @@
 use crate::AppState;
 use axum::extract::State;
 use axum::response::IntoResponse;
-use http::StatusCode;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{Pool, Postgres};
 
-pub async fn create_new_user(State(state): State<AppState>) -> impl IntoResponse {}
+pub async fn create_new_user(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {}

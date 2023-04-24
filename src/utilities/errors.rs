@@ -3,7 +3,7 @@ use serde_json::json;
 
 pub enum DbError {
     BadRequest,
-    TaskNotFound,
+    UserNotFound,
     InternalServerError,
 }
 
@@ -14,7 +14,7 @@ impl IntoResponse for DbError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error")
             }
             Self::BadRequest => (StatusCode::BAD_REQUEST, "Bad Request"),
-            Self::TaskNotFound => (StatusCode::NOT_FOUND, "Task Not Found"),
+            Self::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found"),
         };
         (status, Json(json!({ "error": error_message }))).into_response()
     }

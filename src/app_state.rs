@@ -1,18 +1,19 @@
 use std::sync::{Arc, Mutex};
 
 use crate::utilities::token_wrapper::{
-    CsrfTokenWrapper, DbUrlSecret, GoogleAccessCodeWrapper, NotionSecret, PkceCodeVerifierWrapper,
+    CsrfTokenWrapper, GoogleAccessCodeWrapper, NotionSecret, PkceCodeVerifierWrapper,
     TypesenseSecret,
 };
 use axum::extract::FromRef;
 use oauth2::basic::BasicClient;
 use oauth2::{AccessToken, CsrfToken, PkceCodeVerifier};
+use sqlx::{Pool, Postgres};
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
     pub typesense_secret: TypesenseSecret,
     pub notion_secret: NotionSecret,
-    pub db_url_secret: DbUrlSecret,
+    pub pool: Pool<Postgres>,
     google_auth_client_wrapper: Arc<Mutex<Option<BasicClient>>>,
     pkce_code_verifier_wrapper: Arc<Mutex<Option<PkceCodeVerifierWrapper>>>,
     csrf_state_wrapper: Arc<Mutex<Option<CsrfTokenWrapper>>>,
@@ -23,7 +24,7 @@ impl AppState {
     pub fn new(
         typesense_secret: TypesenseSecret,
         notion_secret: NotionSecret,
-        db_connection_string: DbUrlSecret,
+        pool: Pool<Postgres>,
         google_auth_client_wrapper: Arc<Mutex<Option<BasicClient>>>,
         pkce_code_verifier_wrapper: Arc<Mutex<Option<PkceCodeVerifierWrapper>>>,
         csrf_state_wrapper: Arc<Mutex<Option<CsrfTokenWrapper>>>,
@@ -32,7 +33,7 @@ impl AppState {
         Self {
             typesense_secret,
             notion_secret,
-            db_url_secret: db_connection_string,
+            pool: pool,
             google_auth_client_wrapper,
             pkce_code_verifier_wrapper,
             csrf_state_wrapper,

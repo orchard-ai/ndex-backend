@@ -1,16 +1,10 @@
-use crate::AppState;
+use crate::utilities::errors::DbError;
 use axum::extract::State;
 use axum::response::IntoResponse;
 use http::StatusCode;
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{Pool, Postgres};
 
-pub async fn create_schema(State(state): State<AppState>) -> impl IntoResponse {
-    let db_url_secret = state.db_url_secret.0.as_str();
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(db_url_secret)
-        .await
-        .unwrap();
+pub async fn create_schema(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
     let res = sqlx::query("CREATE SCHEMA user_schema;")
         .execute(&pool)
         .await
@@ -19,14 +13,18 @@ pub async fn create_schema(State(state): State<AppState>) -> impl IntoResponse {
     (StatusCode::OK, "schema user_schema created")
 }
 
-pub async fn create_users_table(State(state): State<AppState>) -> impl IntoResponse {
-    let db_url_secret = state.db_url_secret.0.as_str();
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(db_url_secret)
+pub async fn create_users_table(State(pool): State<Pool<Postgres>>) -> Result<(), DbError> {
+    let query1 = sqlx::query!(
+        r#"
+        CREATE TYPE IF NOT EXISTS account_type AS ENUM ('credentials', 'google');
+        "#,
+    );
+    query1
+        .execute(&pool)
         .await
-        .unwrap();
-    let res = sqlx::query(
+        .map_err(|_| DbError::BadRequest)?;
+
+    let query2 = sqlx::query!(
         r#"
         CREATE TABLE IF NOT EXISTS user_schema.users (
             id SERIAL PRIMARY KEY,
@@ -40,24 +38,19 @@ pub async fn create_users_table(State(state): State<AppState>) -> impl IntoRespo
             country VARCHAR(100),
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),
             updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-            account_type acount_type NOT NULL
+            account_type account_type NOT NULL
         );
         "#,
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-    dbg!(res);
-    (StatusCode::OK, "user_schema.users table created")
+    );
+    query2
+        .execute(&pool)
+        .await
+        .map_err(|_| DbError::BadRequest)?;
+
+    Ok(())
 }
 
-pub async fn drop_user_schema(State(state): State<AppState>) -> impl IntoResponse {
-    let db_url_secret = state.db_url_secret.0.as_str();
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(db_url_secret)
-        .await
-        .unwrap();
+pub async fn drop_user_schema(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
     let res = sqlx::query("DROP SCHEMA user_schema CASCADE;")
         .execute(&pool)
         .await
@@ -66,13 +59,7 @@ pub async fn drop_user_schema(State(state): State<AppState>) -> impl IntoRespons
     (StatusCode::OK, "schema dropped")
 }
 
-pub async fn drop_users_table(State(state): State<AppState>) -> impl IntoResponse {
-    let db_url_secret = state.db_url_secret.0.as_str();
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(db_url_secret)
-        .await
-        .unwrap();
+pub async fn drop_users_table(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
     let res = sqlx::query("DROP TABLE IF EXISTS user_schema.users;")
         .execute(&pool)
         .await
