@@ -1,10 +1,13 @@
-use oauth2::{basic::BasicClient, CsrfToken, AccessToken};
+use oauth2::{basic::BasicClient, AccessToken, CsrfToken};
 
 #[derive(Clone)]
 pub struct NotionSecret(pub String);
 
 #[derive(Clone)]
 pub struct TypesenseSecret(pub String);
+
+#[derive(Clone)]
+pub struct DbConnectionSecret(pub String);
 
 #[derive(Clone)]
 pub struct GoogleAuthClient(pub BasicClient);
