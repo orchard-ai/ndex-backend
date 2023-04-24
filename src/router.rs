@@ -11,6 +11,7 @@ use crate::{
             index::{batch_index, single_index},
             schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
         },
+        user::create_schema::{create_schema, create_users_table, drop_users_table},
     },
 };
 use axum::{
@@ -26,6 +27,9 @@ pub fn create_router(app_state: AppState) -> Router {
         CorsLayer::new().allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap());
     Router::new()
         .route("/", get(root))
+        .route("/user/create_schema", get(create_schema))
+        .route("/user/create_user_schema", get(create_users_table))
+        .route("/user/drop_users_table", get(drop_users_table))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
         .route("/google/calendar", get(retrieve_calendar_list))
