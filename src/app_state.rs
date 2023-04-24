@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use crate::utilities::token_wrapper::{
-    CsrfTokenWrapper, DbConnectionSecret, GoogleAccessCodeWrapper, NotionSecret,
-    PkceCodeVerifierWrapper, TypesenseSecret,
+    CsrfTokenWrapper, DbUrlSecret, GoogleAccessCodeWrapper, NotionSecret, PkceCodeVerifierWrapper,
+    TypesenseSecret,
 };
 use axum::extract::FromRef;
 use oauth2::basic::BasicClient;
@@ -12,7 +12,7 @@ use oauth2::{AccessToken, CsrfToken, PkceCodeVerifier};
 pub struct AppState {
     pub typesense_secret: TypesenseSecret,
     pub notion_secret: NotionSecret,
-    pub db_connection_string: DbConnectionSecret,
+    pub db_url_secret: DbUrlSecret,
     google_auth_client_wrapper: Arc<Mutex<Option<BasicClient>>>,
     pkce_code_verifier_wrapper: Arc<Mutex<Option<PkceCodeVerifierWrapper>>>,
     csrf_state_wrapper: Arc<Mutex<Option<CsrfTokenWrapper>>>,
@@ -23,7 +23,7 @@ impl AppState {
     pub fn new(
         typesense_secret: TypesenseSecret,
         notion_secret: NotionSecret,
-        db_connection_string: DbConnectionSecret,
+        db_connection_string: DbUrlSecret,
         google_auth_client_wrapper: Arc<Mutex<Option<BasicClient>>>,
         pkce_code_verifier_wrapper: Arc<Mutex<Option<PkceCodeVerifierWrapper>>>,
         csrf_state_wrapper: Arc<Mutex<Option<CsrfTokenWrapper>>>,
@@ -32,7 +32,7 @@ impl AppState {
         Self {
             typesense_secret,
             notion_secret,
-            db_connection_string,
+            db_url_secret: db_connection_string,
             google_auth_client_wrapper,
             pkce_code_verifier_wrapper,
             csrf_state_wrapper,
