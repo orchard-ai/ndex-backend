@@ -7,9 +7,6 @@ pub struct NotionSecret(pub String);
 pub struct TypesenseSecret(pub String);
 
 #[derive(Clone)]
-pub struct DbUrlSecret(pub String);
-
-#[derive(Clone)]
 pub struct GoogleAuthClient(pub BasicClient);
 
 #[derive(Clone)]
