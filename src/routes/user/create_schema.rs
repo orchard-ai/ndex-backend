@@ -1,16 +1,13 @@
 use crate::utilities::errors::DbError;
 use axum::extract::State;
-use axum::response::IntoResponse;
-use http::StatusCode;
 use sqlx::{Pool, Postgres};
 
-pub async fn create_schema(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
-    let res = sqlx::query("CREATE SCHEMA user_schema;")
+pub async fn create_schema(State(pool): State<Pool<Postgres>>) -> Result<(), DbError> {
+    sqlx::query!("CREATE SCHEMA IF NOT EXISTS user_schema;")
         .execute(&pool)
         .await
-        .unwrap();
-    dbg!(res);
-    (StatusCode::OK, "schema user_schema created")
+        .map_err(|_| DbError::InternalServerError)?;
+    Ok(())
 }
 
 pub async fn create_users_table(State(pool): State<Pool<Postgres>>) -> Result<(), DbError> {
@@ -19,10 +16,7 @@ pub async fn create_users_table(State(pool): State<Pool<Postgres>>) -> Result<()
         CREATE TYPE IF NOT EXISTS account_type AS ENUM ('credentials', 'google');
         "#,
     );
-    query1
-        .execute(&pool)
-        .await
-        .map_err(|_| DbError::BadRequest)?;
+    query1.execute(&pool).await?;
 
     let query2 = sqlx::query!(
         r#"
@@ -36,34 +30,28 @@ pub async fn create_users_table(State(pool): State<Pool<Postgres>>) -> Result<()
             phone_number VARCHAR(20),
             city VARCHAR(100),
             country VARCHAR(100),
-            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-            updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             account_type account_type NOT NULL
         );
         "#,
     );
-    query2
-        .execute(&pool)
-        .await
-        .map_err(|_| DbError::BadRequest)?;
-
+    query2.execute(&pool).await?;
     Ok(())
 }
 
-pub async fn drop_user_schema(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
-    let res = sqlx::query("DROP SCHEMA user_schema CASCADE;")
-        .execute(&pool)
-        .await
-        .unwrap();
-    dbg!(res);
-    (StatusCode::OK, "schema dropped")
-}
+// pub async fn drop_user_schema(State(pool): State<Pool<Postgres>>) -> Result<(), DbError> {
+//     sqlx::query("DROP SCHEMA user_schema CASCADE;")
+//         .execute(&pool)
+//         .await
+//         .unwrap();
+//     Ok(())
+// }
 
-pub async fn drop_users_table(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
-    let res = sqlx::query("DROP TABLE IF EXISTS user_schema.users;")
+pub async fn drop_users_table(State(pool): State<Pool<Postgres>>) -> Result<(), DbError> {
+    sqlx::query("DROP TABLE IF EXISTS user_schema.users;")
         .execute(&pool)
         .await
         .unwrap();
-    dbg!(res);
-    (StatusCode::OK, "user_schema.users dropped")
+    Ok(())
 }
