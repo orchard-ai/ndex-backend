@@ -11,7 +11,10 @@ use crate::{
             index::{batch_index, single_index},
             schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
         },
-        user::create_schema::{create_schema, create_users_table, drop_users_table},
+        user::{
+            create_schema::{create_schema, create_users_table, drop_users_table},
+            signup::{create_new_user, get_users},
+        },
     },
 };
 use axum::{
@@ -30,6 +33,8 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/create_schema", get(create_schema))
         .route("/user/create_users_table", get(create_users_table))
         .route("/user/drop_users_table", get(drop_users_table))
+        .route("/user/signup", post(create_new_user))
+        .route("/user/get_all", get(get_users))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
         .route("/google/calendar", get(retrieve_calendar_list))
