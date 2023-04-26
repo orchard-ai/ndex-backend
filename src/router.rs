@@ -12,7 +12,7 @@ use crate::{
             schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
         },
         user::{
-            create_schema::{create_schema, create_users_table, drop_users_table},
+            migrate::migrate,
             signup::{create_new_user, get_users},
         },
     },
@@ -30,9 +30,7 @@ pub fn create_router(app_state: AppState) -> Router {
         CorsLayer::new().allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap());
     Router::new()
         .route("/", get(root))
-        .route("/user/create_schema", get(create_schema))
-        .route("/user/create_users_table", get(create_users_table))
-        .route("/user/drop_users_table", get(drop_users_table))
+        .route("/user/migrate", get(migrate))
         .route("/user/signup", post(create_new_user))
         .route("/user/get_all", get(get_users))
         .route("/google/auth", get(google_auth))
