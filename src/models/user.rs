@@ -7,7 +7,8 @@ use serde_derive::Serialize;
 #[derive(Debug, Deserialize)]
 pub struct SignUpForm {
     pub email: String,
-    pub google_token: Option<String>,
+    pub oauth_provider_id: Option<String>,
+    pub oauth_access_token: Option<String>,
     pub password: Option<String>,
     pub account_type: usize,
 }
@@ -18,6 +19,8 @@ pub struct UpdateUser {
     pub last_name: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
+    pub oauth_provider_id: Option<String>,
+    pub oauth_access_token: Option<String>,
     pub date_of_birth: Option<chrono::NaiveDate>,
     pub phone_number: Option<String>,
     pub city: Option<String>,
@@ -28,10 +31,12 @@ pub struct UpdateUser {
 #[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: i64,
-    pub first_name: String,
-    pub last_name: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
     pub email: String,
-    pub password: String,
+    pub password_hash: Option<String>,
+    pub oauth_provider_id: Option<String>,
+    pub oauth_access_token: Option<String>,
     pub date_of_birth: Option<chrono::NaiveDate>,
     pub phone_number: Option<String>,
     pub city: Option<String>,
@@ -46,6 +51,7 @@ pub struct User {
 pub enum AccountType {
     Credentials,
     Google,
+    Apple,
 }
 
 impl From<usize> for AccountType {
@@ -53,6 +59,7 @@ impl From<usize> for AccountType {
         match index {
             0 => AccountType::Credentials,
             1 => AccountType::Google,
+            2 => AccountType::Apple,
             _ => panic!("Invalid AccountType index"),
         }
     }
@@ -75,6 +82,7 @@ impl AccountType {
         match self {
             AccountType::Credentials => "credentials",
             AccountType::Google => "google",
+            AccountType::Apple => "apple",
         }
     }
 }
