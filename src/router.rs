@@ -13,7 +13,7 @@ use crate::{
         },
         user::{
             migrate::migrate,
-            signup::{create_new_user, get_users},
+            signup::{create_new_user, get_users, update_user},
         },
     },
 };
@@ -32,6 +32,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/", get(root))
         .route("/user/migrate", get(migrate))
         .route("/user/signup", post(create_new_user))
+        .route("/user/update/:id", post(update_user))
         .route("/user/get_all", get(get_users))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
