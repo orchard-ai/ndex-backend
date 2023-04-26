@@ -4,6 +4,7 @@ use sqlx::{Pool, Postgres};
 
 pub async fn migrate(State(pool): State<Pool<Postgres>>) -> Result<(), DbError> {
     sqlx::migrate!("./migrations")
+        .set_locking(false)
         .run(&pool)
         .await
         .map_err(|e| DbError::BadRequest(e.to_string()))?;

@@ -53,9 +53,6 @@ pub async fn get_users(State(pool): State<Pool<Postgres>>) -> impl IntoResponse 
             let json = serde_json::to_string(&users).unwrap();
             Ok((StatusCode::OK, json))
         }
-        Err(_) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal Server Error".to_string(),
-        )),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
     }
 }
