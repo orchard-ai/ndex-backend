@@ -26,7 +26,7 @@ pub async fn create_new_user(
 
     sqlx::query(
             r#"
-            INSERT INTO user_schema.users (first_name, last_name, email, password, date_of_birth, phone_number, city, country, created_at, updated_at, account_type)
+            INSERT INTO userdb.users (first_name, last_name, email, password, date_of_birth, phone_number, city, country, created_at, updated_at, account_type)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, DEFAULT, DEFAULT, $9)
             RETURNING id, created_at, updated_at
             "#,
@@ -40,13 +40,13 @@ pub async fn create_new_user(
         .bind(city.clone())
         .bind(country.clone())
         .bind(account_type.to_str()) // Convert account_type enum to string
-        .fetch_one(&pool)
+        .execute(&pool)
         .await?;
     Ok(())
 }
 
 pub async fn get_users(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
-    let q = r#"SELECT *, account_type as "account_type: _" FROM user_schema.users"#;
+    let q = r#"SELECT *, account_type as "account_type: _" FROM userdb.users"#;
     let users = sqlx::query_as::<_, User>(q).fetch_all(&pool).await;
     match users {
         Ok(users) => {

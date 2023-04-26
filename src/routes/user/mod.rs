@@ -1,2 +1,2 @@
-pub mod create_schema;
+pub mod migrate;
 pub mod signup;
