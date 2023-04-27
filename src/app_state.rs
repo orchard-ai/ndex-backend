@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::utilities::token_wrapper::{
-    CsrfTokenWrapper, GoogleAccessCodeWrapper, NotionSecret, PkceCodeVerifierWrapper,
+    CsrfTokenWrapper, GoogleAccessCodeWrapper, NotionSecret, NotionClientId, PkceCodeVerifierWrapper,
     TypesenseSecret,
 };
 use axum::extract::FromRef;
@@ -13,6 +13,7 @@ use sqlx::{Pool, Postgres};
 pub struct AppState {
     pub typesense_secret: TypesenseSecret,
     pub notion_secret: NotionSecret,
+    pub notion_client_id: NotionClientId,
     pub pool: Pool<Postgres>,
     google_auth_client_wrapper: Arc<Mutex<Option<BasicClient>>>,
     pkce_code_verifier_wrapper: Arc<Mutex<Option<PkceCodeVerifierWrapper>>>,
@@ -23,6 +24,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(
         typesense_secret: TypesenseSecret,
+        notion_client_id: NotionClientId,
         notion_secret: NotionSecret,
         pool: Pool<Postgres>,
         google_auth_client_wrapper: Arc<Mutex<Option<BasicClient>>>,
@@ -32,6 +34,7 @@ impl AppState {
     ) -> Self {
         Self {
             typesense_secret,
+            notion_client_id,
             notion_secret,
             pool: pool,
             google_auth_client_wrapper,
