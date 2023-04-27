@@ -1,6 +1,7 @@
 pub mod block_models;
 pub mod retrieve_blocks;
 pub mod search;
+pub mod auth;
 
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
