@@ -1,12 +1,8 @@
-use std::collections::HashMap;
+use axum::{response::IntoResponse, Json};
 
-use axum::{extract::State, response::IntoResponse, Json};
-
-use http::{HeaderMap, HeaderValue, StatusCode, };
+use http::{HeaderMap, HeaderValue, StatusCode};
 use openssl::base64;
 use serde::{Deserialize, Serialize};
-
-use crate::utilities::token_wrapper::{NotionClientId, NotionSecret};
 
 #[derive(Debug, Deserialize, Serialize)]
 struct TokenRequest {
@@ -15,36 +11,37 @@ struct TokenRequest {
     redirect_uri: String,
 }
 
-pub async fn obtain_access_token(
-    State(notion_client_id): State<NotionClientId>,
-    State(notion_secret): State<NotionSecret>,
-    Json(request): Json<serde_json::Value>,
-) -> impl IntoResponse {
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NotionAuthRequest {
+    pub temp_code: String,
+    pub notion_client_id: String,
+    pub notion_secret: String,
+}
+
+pub async fn obtain_access_token(Json(request): Json<NotionAuthRequest>) -> impl IntoResponse {
+    let NotionAuthRequest {
+        temp_code,
+        notion_client_id,
+        notion_secret,
+    } = request;
 
     let url = "https://api.notion.com/v1/oauth/token";
-
     let mut headers = HeaderMap::new();
+
     let auth_header_value = format!(
         "Basic {}",
-        base64::encode_block(&format!(
-            "{}:{}",
-            &notion_client_id.0,
-            &notion_secret.0
-        ).as_bytes())
+        base64::encode_block(&format!("{}:{}", &notion_client_id, &notion_secret).as_bytes())
     );
-
-    let temp_code = request
-        .get("temp_code")
-        .unwrap()
-        .to_string();
-
-    headers.insert("Authorization", HeaderValue::from_str(&auth_header_value).expect("failed to create header value"));
+    headers.insert(
+        "Authorization",
+        HeaderValue::from_str(&auth_header_value).expect("failed to create header value"),
+    );
     headers.insert("Content-Type", HeaderValue::from_static("application/json"));
 
-    let token_request = TokenRequest {
-        grant_type: "authorization-code".to_string(),
+    let token_request: TokenRequest = TokenRequest {
+        grant_type: "authorization_code".to_string(),
         code: temp_code.to_string(),
-        redirect_uri: "http://localhost:5173/settings".to_string(),
+        redirect_uri: "http://localhost:5173/notion-access-redirect".to_string(),
     };
 
     let client = reqwest::Client::new();
@@ -53,9 +50,9 @@ pub async fn obtain_access_token(
         .headers(headers)
         .json(&token_request)
         .send()
-        .await?;
+        .await
+        .unwrap();
 
-    let response_body: HashMap<String, String> = response.json().await?;
-
-    (StatusCode::OK, Json(response_body).clone());
+    let response_body: serde_json::Value = response.json().await.unwrap();
+    (StatusCode::OK, Json(response_body))
 }
