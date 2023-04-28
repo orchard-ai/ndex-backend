@@ -77,7 +77,7 @@ pub async fn update_user(
         None
     };
     dbg!(&account_type);
-    let q = r#"
+    let q = r#"--sql
         UPDATE userdb.users
         SET
             first_name = COALESCE($2, first_name),
