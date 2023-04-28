@@ -30,11 +30,35 @@ pub struct TypesenseInsert {
     pub title: String,
     pub contents: String,
     pub url: String,
-    pub platform: String,
+    pub added_by: Option<String>,
+    pub platform: Platform,
     #[serde(rename = "type")]
-    pub type_field: String,
+    pub type_field: RowType,
     #[serde(rename = "last_edited_time")]
     pub last_edited_time: i64,
     #[serde(rename = "created_time")]
     pub created_time: i64,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Platform {
+    #[default]
+    File,
+    Notion,
+    GCalendar,
+    GMail,
+    Discord,
+    Slack,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RowType {
+    #[default]
+    File,
+    Event,
+    Email,
+    Message,
+    Task,
 }

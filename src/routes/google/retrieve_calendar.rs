@@ -1,5 +1,5 @@
 use crate::models::gcalendar::GCalendarList;
-use crate::routes::typesense::TypesenseInsert;
+use crate::routes::typesense::{Platform, RowType, TypesenseInsert};
 use crate::{app_state::AppState, models::gevents::EventsList};
 
 use axum::response::IntoResponse;
@@ -94,13 +94,14 @@ fn parse_events(events: Vec<EventsList>) -> Vec<TypesenseInsert> {
                 let last_edited_time = DateTime::parse_from_rfc3339(&event.created)
                     .unwrap()
                     .timestamp();
-                let platform = "google_calendar".to_string();
-                let type_field = "google_event".to_string();
+                let platform = Platform::GCalendar;
+                let type_field = RowType::Event;
                 all_events.push(TypesenseInsert {
                     id,
                     title,
                     contents,
                     url,
+                    added_by: None,
                     created_time,
                     last_edited_time,
                     platform,
