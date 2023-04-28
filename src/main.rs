@@ -5,7 +5,7 @@ use dotenv::dotenv;
 use mentat_backend::{
     app_state::AppState,
     run,
-    utilities::token_wrapper::{NotionSecret, TypesenseSecret},
+    utilities::token_wrapper::{NotionSecret, NotionClientId, TypesenseSecret},
 };
 use sqlx::postgres::PgPoolOptions;
 
@@ -13,6 +13,7 @@ use sqlx::postgres::PgPoolOptions;
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     let notion_secret = std::env::var("NOTION_SECRET").expect("Notion Secret not set.");
+    let notion_client_id = std::env::var("NOTION_CLIENT_ID").expect("Notion client ID not set.");
     let typesense_secret = std::env::var("TYPESENSE_SECRET").expect("Typesense Secret not set.");
     let db_url = std::env::var("DATABASE_URL").expect("DB connection string not set");
 
@@ -24,6 +25,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app_state = AppState::new(
         TypesenseSecret(typesense_secret),
+        NotionClientId(notion_client_id),
         NotionSecret(notion_secret),
         pool,
         Arc::new(Mutex::new(None)),
