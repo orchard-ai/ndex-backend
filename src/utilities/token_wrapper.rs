@@ -4,6 +4,9 @@ use oauth2::{basic::BasicClient, AccessToken, CsrfToken};
 pub struct NotionSecret(pub String);
 
 #[derive(Clone)]
+pub struct NotionClientId(pub String);
+
+#[derive(Clone)]
 pub struct TypesenseSecret(pub String);
 
 #[derive(Clone)]

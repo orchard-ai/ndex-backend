@@ -14,6 +14,7 @@ Run the following commands in your terminal:
 - Create a `.env` file (ask Pan for the dev notion secret):
   ```
   NOTION_SECRET=
+  NOTION_CLIENT_ID=
   TYPESENSE_SECRET=xyz
   ```
 - Run backend Rust server: `cargo run`
