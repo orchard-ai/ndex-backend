@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     routes::{
         notion::retrieve_blocks::{get_page_blocks, parse_block_response},
-        typesense::TypesenseInsert,
+        typesense::{Platform, RowType, TypesenseInsert},
     },
     utilities::token_wrapper::NotionSecret,
 };
@@ -110,8 +110,8 @@ pub fn parse_search_response(response: SearchResponse) -> Vec<TypesenseInsert> {
         let title = format!("{}{}", prop_name, prop_title).replace("\"", "");
         let contents = title.clone();
         let url = result.url;
-        let platform = "notion".to_string();
-        let type_field = result.object.to_string();
+        let platform = Platform::Notion;
+        let type_field = RowType::File;
         let last_edited_time = DateTime::parse_from_rfc3339(&result.last_edited_time)
             .unwrap()
             .timestamp();
@@ -123,6 +123,7 @@ pub fn parse_search_response(response: SearchResponse) -> Vec<TypesenseInsert> {
             title,
             contents,
             url,
+            added_by: None,
             platform,
             type_field,
             last_edited_time,

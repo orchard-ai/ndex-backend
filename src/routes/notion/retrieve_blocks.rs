@@ -1,4 +1,7 @@
-use crate::{routes::typesense::TypesenseInsert, utilities::token_wrapper::NotionSecret};
+use crate::{
+    routes::typesense::{Platform, RowType, TypesenseInsert},
+    utilities::token_wrapper::NotionSecret,
+};
 use axum::{extract::State, response::IntoResponse, Json};
 use chrono::DateTime;
 use http::StatusCode;
@@ -121,10 +124,11 @@ pub async fn parse_block_response(
             title,
             contents,
             url,
+            added_by: None,
             created_time,
             last_edited_time,
-            platform: "notion".to_string(),
-            type_field: block_type,
+            platform: Platform::Notion,
+            type_field: RowType::File,
         },
     ))
 }
