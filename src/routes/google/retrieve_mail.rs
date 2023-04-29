@@ -58,57 +58,9 @@ pub async fn get_message(message_id: &str, access_code: &str) -> ParsedMail {
         .send()
         .await
         .unwrap();
-    let message: ParsedMail = response.json().await.unwrap();
-    dbg!(&message);
-    return message;
+    let loaded: ParsedMail = response.json().await.unwrap();
+    dbg!(&loaded);
+    return loaded;
 }
 
-// fn parse_gmail(msg: serde_json::Value) {
-//     let binding = serde_json::to_string(&msg).unwrap();
-//     dbg!(&binding);
-//     let raw_data = binding.as_bytes();
-//     dbg!(&raw_data);
-//     let parsed = parse_mail(raw_data).unwrap();
-//     // Extract the subject
-//     let subject = parsed
-//         .headers
-//         .get_first_value("Subject")
-//         .unwrap_or("Couldn't find subject".to_string());
-
-//     // Extract the sender
-//     let sender = parsed
-//         .headers
-//         .get_first_value("From")
-//         .unwrap_or("Unable to get sender".to_string());
-
-//     // Extract the recipients
-//     let to_recipients = parsed.headers.get_first_value("To").unwrap_or_default();
-//     let cc_recipients = parsed.headers.get_first_value("Cc").unwrap_or_default();
-//     let bcc_recipients = parsed.headers.get_first_value("Bcc").unwrap_or_default();
-//     let all_recipients = format!("{}, {}, {}", to_recipients, cc_recipients, bcc_recipients);
-
-//     // Extract the date sent
-//     let date_sent = parsed
-//         .headers
-//         .get_first_value("Date")
-//         .unwrap_or("Unable to get date sent".to_string());
-
-//     // Extract the email content
-//     let email_body = match parsed.subparts.len() {
-//         0 => parsed.get_body().unwrap_or_default(),
-//         _ => parsed
-//             .subparts
-//             .iter()
-//             .filter(|part| part.ctype.mimetype == "text/plain")
-//             .map(|part| part.get_body().unwrap_or_default())
-//             .collect::<Vec<String>>()
-//             .join("\n"),
-//     };
-
-//     // Print the extracted information
-//     println!("Subject: {}", subject);
-//     println!("Sender: {}", sender);
-//     println!("Recipients: {}", all_recipients);
-//     println!("Date sent: {}", date_sent);
-//     println!("Email body: {}", email_body);
-// }
+fn parse_gmail(msg: ParsedMail) {}

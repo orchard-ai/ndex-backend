@@ -26,6 +26,7 @@ pub struct TypesenseField {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TypesenseInsert {
+    pub owner_id: String,
     pub id: String,
     pub title: String,
     pub contents: String,
