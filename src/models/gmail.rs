@@ -1,5 +1,9 @@
+use serde::de::SeqAccess;
+use serde::de::{self, Deserializer, MapAccess, Visitor};
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
+use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +38,8 @@ pub struct ParsedMail {
 pub struct Payload {
     pub body: Body,
     pub filename: String,
-    pub headers: Vec<Header>,
+    #[serde(deserialize_with = "headers_map_from_vec")]
+    pub headers: HashMap<String, Vec<String>>,
     pub mime_type: String,
     pub part_id: String,
     #[serde(default)]
@@ -60,7 +65,8 @@ pub struct Header {
 pub struct Part {
     pub body: PartBody,
     pub filename: String,
-    pub headers: Vec<PartHeader>,
+    #[serde(deserialize_with = "headers_map_from_vec")]
+    pub headers: HashMap<String, Vec<String>>,
     pub mime_type: String,
     pub part_id: String,
     pub parts: Option<Vec<Part>>,
@@ -79,4 +85,35 @@ pub struct PartBody {
 pub struct PartHeader {
     pub name: String,
     pub value: String,
+}
+
+fn headers_map_from_vec<'de, D>(deserializer: D) -> Result<HashMap<String, Vec<String>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct HeadersMapVisitor;
+
+    impl<'de> Visitor<'de> for HeadersMapVisitor {
+        type Value = HashMap<String, Vec<String>>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a sequence of header objects")
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: SeqAccess<'de>,
+        {
+            let mut headers_map = HashMap::new();
+            while let Some(header) = seq.next_element::<Header>()? {
+                headers_map
+                    .entry(header.name)
+                    .or_insert_with(Vec::new)
+                    .push(header.value);
+            }
+            Ok(headers_map)
+        }
+    }
+
+    deserializer.deserialize_seq(HeadersMapVisitor)
 }

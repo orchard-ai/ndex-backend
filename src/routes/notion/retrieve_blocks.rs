@@ -120,6 +120,7 @@ pub async fn parse_block_response(
     Some((
         block_id.clone(),
         TypesenseInsert {
+            owner_id: "test".to_string(),
             id: block_id,
             title,
             contents,
