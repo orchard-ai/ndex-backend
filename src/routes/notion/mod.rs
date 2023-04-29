@@ -1,10 +1,29 @@
+pub mod auth;
 pub mod block_models;
 pub mod retrieve_blocks;
 pub mod search;
-pub mod auth;
 
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
+
+/* PLATFORM REQUESTS
+- platform (access code of user)
+- ndex (user id)
+- ACTION (first index/scraping, single query) -> different endpoints
+
+RESPONSE:
+-> periodic responses with ETA until done (LATER)
+-> final response saying that it went ok
+ */
+
+/* USER ACCOUNT (update info, update password, adding/removing integrations)
+- ndex (user id)
+- password (if password auth)
+- auth type
+- access id (if oauth type)
+RESPONSE:
+-> ok or err (wrong password, network error)
+ */
 
 /* ------------------- SEARCH QUERY --------------------------- */
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

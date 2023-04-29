@@ -9,12 +9,12 @@ use axum::{
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
 use http::StatusCode;
-use sqlx::{Pool, Postgres};
+use sqlx::{Pool, Postgres, Row};
 
 pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
     extract::Json(form): extract::Json<SignUpForm>,
-) -> Result<(), DbError> {
+) -> Result<String, DbError> {
     let first_name = "".to_string();
     let last_name = "".to_string();
     let email = form.email;
@@ -39,7 +39,7 @@ pub async fn create_new_user(
             oauth_access_token = form.oauth_access_token;
         }
     }
-    sqlx::query(
+    let result = sqlx::query(
             r#"
             INSERT INTO userdb.users (first_name, last_name, email, password_hash, oauth_provider_id, oauth_access_token, date_of_birth, phone_number, city, country, created_at, updated_at, account_type)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, DEFAULT, DEFAULT, $11)
@@ -57,9 +57,10 @@ pub async fn create_new_user(
         .bind(city.clone())
         .bind(country.clone())
         .bind(account_type.to_str()) // Convert account_type enum to string
-        .execute(&pool)
+        .fetch_one(&pool)
         .await?;
-    Ok(())
+    let id: i64 = result.try_get("id").unwrap();
+    Ok(id.to_string())
 }
 
 pub async fn update_user(
