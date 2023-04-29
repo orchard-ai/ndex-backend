@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use crate::models::gmail::{Message, ParsedMail};
+use crate::routes::typesense::{Platform, RowType, TypesenseInsert};
 use crate::{app_state::AppState, models::gmail::MessagesList};
 
 use axum::response::IntoResponse;
@@ -59,8 +62,47 @@ pub async fn get_message(message_id: &str, access_code: &str) -> ParsedMail {
         .await
         .unwrap();
     let loaded: ParsedMail = response.json().await.unwrap();
-    dbg!(&loaded);
+    parse_gmail(loaded.clone(), "test".to_owned());
     return loaded;
 }
 
-fn parse_gmail(msg: ParsedMail) {}
+fn parse_gmail(msg: ParsedMail, user_id: String) -> TypesenseInsert {
+    let id = msg.id;
+    let subject = match get_header_field("Subject".to_string(), &msg.payload.headers) {
+        Ok(subject) => subject,
+        Err(error) => error.to_string(),
+    };
+    let snippet = msg.snippet;
+    let email_link = format!("https://mail.google.com/mail/u/0/#inbox/{}", &id);
+    dbg!(&subject);
+    dbg!(&email_link);
+    TypesenseInsert {
+        owner_id: user_id,
+        id: id,
+        title: subject,
+        contents: snippet,
+        url: email_link,
+        added_by: Some("".to_string()),
+        platform: Platform::GMail,
+        type_field: RowType::Email,
+        last_edited_time: 3,
+        created_time: 3,
+    }
+}
+
+fn get_header_field(
+    field: String,
+    headers: &HashMap<String, Vec<String>>,
+) -> Result<String, &'static str> {
+    match headers.get(&field) {
+        Some(field_values) => {
+            if field_values.is_empty() {
+                Err("Subject header exists, but its value list is empty.")
+            } else {
+                // Assuming you want the first subject value if there are multiple instances
+                Ok(field_values[0].clone())
+            }
+        }
+        None => Err("Subject header not found."),
+    }
+}
