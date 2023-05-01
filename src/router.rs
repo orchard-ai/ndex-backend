@@ -6,12 +6,13 @@ use crate::{
             retrieve_mail::retrieve_messages_list,
         },
         login::google_auth::{google_auth, google_auth_sucess},
-        notion::{retrieve_blocks::block_query, search::search_all, auth::obtain_access_token},
+        notion::{auth::obtain_access_token, retrieve_blocks::block_query, search::search_all},
         typesense::{
             index::{batch_index, single_index},
             schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
         },
         user::{
+            login::login,
             migrate::migrate,
             signup::{create_new_user, delete_user, get_users, update_user},
         },
@@ -32,6 +33,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/", get(root))
         .route("/user/migrate", get(migrate))
         .route("/user/signup", post(create_new_user))
+        .route("/user/login", post(login))
         .route("/user/update/:id=", post(update_user))
         .route("/user/delete/:id=", get(delete_user))
         .route("/user/get_all", get(get_users))
