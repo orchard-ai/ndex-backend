@@ -4,30 +4,6 @@ use std::str::FromStr;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
-#[derive(Debug, Deserialize)]
-pub struct SignUpForm {
-    pub email: String,
-    pub oauth_provider_id: Option<String>,
-    pub oauth_access_token: Option<String>,
-    pub password: Option<String>,
-    pub account_type: usize,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct UpdateUser {
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
-    pub email: Option<String>,
-    pub password: Option<String>,
-    pub oauth_provider_id: Option<String>,
-    pub oauth_access_token: Option<String>,
-    pub date_of_birth: Option<chrono::NaiveDate>,
-    pub phone_number: Option<String>,
-    pub city: Option<String>,
-    pub country: Option<String>,
-    pub account_type: Option<usize>,
-}
-
 #[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: i64,

@@ -1,9 +1,9 @@
 use crate::{
-    models::user::{AccountType, SignUpForm, UpdateUser, User},
+    models::user::{AccountType, User},
     utilities::errors::DbError,
 };
 use axum::{
-    extract::{self, State},
+    extract::{Json, Path, State},
     response::IntoResponse,
 };
 use bcrypt::{hash, DEFAULT_COST};
@@ -11,9 +11,11 @@ use chrono::{DateTime, Utc};
 use http::StatusCode;
 use sqlx::{Pool, Postgres, Row};
 
+use super::{SignUpForm, UpdateUser};
+
 pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
-    extract::Json(form): extract::Json<SignUpForm>,
+    Json(form): Json<SignUpForm>,
 ) -> Result<String, DbError> {
     let first_name = "".to_string();
     let last_name = "".to_string();
@@ -39,13 +41,12 @@ pub async fn create_new_user(
             oauth_access_token = form.oauth_access_token;
         }
     }
-    let result = sqlx::query(
-            r#"
+    let q = r#"
             INSERT INTO userdb.users (first_name, last_name, email, password_hash, oauth_provider_id, oauth_access_token, date_of_birth, phone_number, city, country, created_at, updated_at, account_type)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, DEFAULT, DEFAULT, $11)
-            RETURNING id, created_at, updated_at
-            "#,
-        )
+            RETURNING id
+            "#;
+    let result = sqlx::query(q)
         .bind(first_name.clone())
         .bind(last_name.clone())
         .bind(email.clone())
@@ -64,10 +65,10 @@ pub async fn create_new_user(
 }
 
 pub async fn update_user(
-    extract::Path(id): extract::Path<i64>,
+    Path(id): Path<i64>,
     State(pool): State<Pool<Postgres>>,
-    extract::Json(payload): extract::Json<UpdateUser>,
-) -> Result<(), DbError> {
+    Json(payload): Json<UpdateUser>,
+) -> Result<String, DbError> {
     let account_type = match payload.account_type {
         Some(acc_t) => Some(AccountType::from(acc_t)),
         None => None,
@@ -93,8 +94,9 @@ pub async fn update_user(
             country = COALESCE($11, country),
             account_type = COALESCE($12, account_type)
         WHERE id = $1;
+        RETURNING id
         "#;
-    sqlx::query(q)
+    let result = sqlx::query(q)
         .bind(id)
         .bind(payload.first_name)
         .bind(payload.last_name)
@@ -107,9 +109,10 @@ pub async fn update_user(
         .bind(payload.city)
         .bind(payload.country)
         .bind(account_type)
-        .execute(&pool)
+        .fetch_one(&pool)
         .await?;
-    Ok(())
+    let updated_userid: i64 = result.try_get("id").unwrap();
+    Ok(updated_userid.to_string())
 }
 
 pub async fn get_users(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
@@ -125,7 +128,7 @@ pub async fn get_users(State(pool): State<Pool<Postgres>>) -> impl IntoResponse 
 }
 
 pub async fn delete_user(
-    extract::Path(id): extract::Path<i64>,
+    Path(id): Path<i64>,
     State(pool): State<Pool<Postgres>>,
 ) -> Result<(), DbError> {
     let q = r#"DELETE FROM userdb.users WHERE id = $1"#;
