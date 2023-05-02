@@ -9,9 +9,10 @@ use axum::{
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
 use http::StatusCode;
+use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
 
-use super::{SignUpForm, TokenResponse, UpdateUser};
+use super::{generate_token, SignUpForm, TokenResponse, UpdateUser};
 
 pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
@@ -30,15 +31,26 @@ pub async fn create_new_user(
     let oauth_access_token: Option<String>;
     match account_type {
         AccountType::Credentials => {
-            // TODO: add check that password cannot be empty
-            password_hash = Some(hash(form.password.unwrap(), DEFAULT_COST).unwrap());
-            oauth_provider_id = None;
-            oauth_access_token = None;
+            if let Some(password) = form.password {
+                password_hash = Some(hash(password, DEFAULT_COST).unwrap());
+                oauth_provider_id = None;
+                oauth_access_token = None;
+            } else {
+                return Err(DbError::BadRequest(
+                    "No password provided for Credentials login".to_string(),
+                ));
+            }
         }
         _ => {
-            password_hash = None;
-            oauth_provider_id = form.oauth_provider_id;
-            oauth_access_token = form.oauth_access_token;
+            if let (Some(opid), Some(oat)) = (form.oauth_provider_id, form.oauth_access_token) {
+                oauth_provider_id = Some(opid);
+                oauth_access_token = Some(oat);
+                password_hash = None;
+            } else {
+                return Err(DbError::BadRequest(
+                    "Missing OAuth information for OAuth login".to_string(),
+                ));
+            }
         }
     }
     let q = r#"
@@ -61,9 +73,8 @@ pub async fn create_new_user(
         .fetch_one(&pool)
         .await?;
     let id: i64 = result.try_get("id").unwrap();
-    let res = TokenResponse {
-        token: id.to_string(),
-    };
+    let token = generate_token(&id.to_string());
+    let res: TokenResponse = TokenResponse { token };
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }
 
@@ -115,7 +126,7 @@ pub async fn update_user(
         .fetch_one(&pool)
         .await?;
     let updated_userid: i64 = result.try_get("id").unwrap();
-    Ok(updated_userid.to_string())
+    Ok(json!({ "success": updated_userid }).to_string())
 }
 
 pub async fn get_users(State(pool): State<Pool<Postgres>>) -> impl IntoResponse {
@@ -126,7 +137,7 @@ pub async fn get_users(State(pool): State<Pool<Postgres>>) -> impl IntoResponse 
             let json = serde_json::to_string(&users).unwrap();
             Ok((StatusCode::OK, json))
         }
-        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+        Err(e) => Err(DbError::InternalServerError(e.to_string())),
     }
 }
 
