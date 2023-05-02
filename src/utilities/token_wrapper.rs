@@ -1,7 +1,7 @@
 use oauth2::{basic::BasicClient, AccessToken, CsrfToken};
 
 #[derive(Clone)]
-pub struct NotionSecret(pub String);
+pub struct NotionAccessSecret(pub String);
 
 #[derive(Clone)]
 pub struct NotionClientId(pub String);

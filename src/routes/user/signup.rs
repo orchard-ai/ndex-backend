@@ -11,12 +11,12 @@ use chrono::{DateTime, Utc};
 use http::StatusCode;
 use sqlx::{Pool, Postgres, Row};
 
-use super::{SignUpForm, UpdateUser};
+use super::{SignUpForm, TokenResponse, UpdateUser};
 
 pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
     Json(form): Json<SignUpForm>,
-) -> Result<String, DbError> {
+) -> Result<impl IntoResponse, DbError> {
     let first_name = "".to_string();
     let last_name = "".to_string();
     let email = form.email;
@@ -61,7 +61,10 @@ pub async fn create_new_user(
         .fetch_one(&pool)
         .await?;
     let id: i64 = result.try_get("id").unwrap();
-    Ok(id.to_string())
+    let res = TokenResponse {
+        token: id.to_string(),
+    };
+    Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }
 
 pub async fn update_user(
