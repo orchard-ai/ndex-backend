@@ -1,6 +1,6 @@
 use crate::{
     routes::typesense::{Platform, RowType, TypesenseInsert},
-    utilities::token_wrapper::NotionSecret,
+    utilities::token_wrapper::NotionAccessSecret,
 };
 use axum::{extract::State, response::IntoResponse, Json};
 use chrono::DateTime;
@@ -11,7 +11,7 @@ use serde_json::Value;
 use super::block_models;
 
 pub async fn block_query(
-    State(notion_secret): State<NotionSecret>,
+    State(notion_secret): State<NotionAccessSecret>,
     Json(page_id): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     let client = Client::new();

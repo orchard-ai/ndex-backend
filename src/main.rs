@@ -5,7 +5,7 @@ use dotenv::dotenv;
 use mentat_backend::{
     app_state::AppState,
     run,
-    utilities::token_wrapper::{NotionSecret, NotionClientId, TypesenseSecret},
+    utilities::token_wrapper::{NotionAccessSecret, NotionClientId, TypesenseSecret},
 };
 use sqlx::postgres::PgPoolOptions;
 
@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
     let app_state = AppState::new(
         TypesenseSecret(typesense_secret),
         NotionClientId(notion_client_id),
-        NotionSecret(notion_secret),
+        NotionAccessSecret(notion_secret),
         pool,
         Arc::new(Mutex::new(None)),
         Arc::new(Mutex::new(None)),

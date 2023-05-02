@@ -5,7 +5,7 @@ use crate::{
         notion::retrieve_blocks::{get_page_blocks, parse_block_response},
         typesense::{Platform, RowType, TypesenseInsert},
     },
-    utilities::token_wrapper::NotionSecret,
+    utilities::token_wrapper::NotionAccessSecret,
 };
 
 use axum::{extract::State, response::IntoResponse, Json};
@@ -17,9 +17,9 @@ use serde_jsonlines::write_json_lines;
 
 use super::SearchResponse;
 
-pub async fn search_all(State(notion_secret): State<NotionSecret>) -> impl IntoResponse {
+pub async fn index(State(notion_access_token): State<NotionAccessSecret>) -> impl IntoResponse {
     let client = Client::new();
-    let bearer = format!("Bearer {}", &notion_secret.0);
+    let bearer = format!("Bearer {}", &notion_access_token.0);
     let mut cursor: Option<String> = None;
     let mut results: HashMap<String, TypesenseInsert> = HashMap::new();
     loop {
