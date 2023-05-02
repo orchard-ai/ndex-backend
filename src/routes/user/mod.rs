@@ -1,6 +1,8 @@
 use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 
+use crate::models::user::AccountType;
+
 pub mod login;
 pub mod migrate;
 pub mod signup;
@@ -20,6 +22,7 @@ pub struct LoginRequest {
     password: Option<String>,
     oauth_provider_id: Option<String>,
     oauth_access_token: Option<String>,
+    account_type: AccountType,
 }
 
 #[derive(Debug, Deserialize)]

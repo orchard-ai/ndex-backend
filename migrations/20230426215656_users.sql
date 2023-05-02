@@ -7,8 +7,8 @@ CREATE TABLE userdb.users (
     last_name VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255), -- used only for password-based authentication
-    oauth_provider_id VARCHAR(5000), -- used only for OAuth-based authentication
-    oauth_access_token VARCHAR(1000), -- used only for OAuth-based authentication
+    oauth_provider_id VARCHAR(255), -- used only for OAuth-based authentication
+    oauth_access_token VARCHAR(2000), -- used only for OAuth-based authentication
     date_of_birth DATE,
     phone_number VARCHAR(20),
     city VARCHAR(100),
