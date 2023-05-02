@@ -97,7 +97,7 @@ fn parse_events(events: Vec<EventsList>) -> Vec<TypesenseInsert> {
                 let platform = Platform::GCalendar;
                 let type_field = RowType::Event;
                 all_events.push(TypesenseInsert {
-                    owner_id: "test".to_string(),
+                    account_email: "test".to_string(),
                     id,
                     title,
                     contents,

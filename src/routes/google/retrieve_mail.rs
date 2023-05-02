@@ -99,7 +99,7 @@ fn parse_gmail(msg: &ParsedMail, user: &GMailUser) -> TypesenseInsert {
     dbg!(&subject);
     dbg!(&email_link);
     TypesenseInsert {
-        owner_id: user.id.to_owned(),
+        account_email: user.email_address.to_owned(),
         id: id,
         title: subject,
         contents: snippet,

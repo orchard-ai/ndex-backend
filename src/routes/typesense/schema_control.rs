@@ -1,45 +1,57 @@
-use crate::utilities::token_wrapper::TypesenseSecret;
 use super::{TypesenseCollection, TypesenseField};
+use crate::utilities::token_wrapper::TypesenseSecret;
 
 use axum::{
-    Json, 
-    response::IntoResponse, 
-    extract::State,
+    extract::{Path, State},
+    response::IntoResponse,
+    Json,
 };
-use reqwest::Client;
 use http::StatusCode;
+use reqwest::Client;
 
 pub async fn create_document_schema(
     State(typesense_secret): State<TypesenseSecret>,
+    Path(id): Path<i64>,
 ) -> impl IntoResponse {
     let client = Client::new();
     let typesense_admin_key = typesense_secret.0.to_owned();
-    let document_schema = generate_document_schema();
+    let document_schema = generate_document_schema(id);
 
-    let request = client.post("http://localhost:8108/collections")
+    let request = client
+        .post("http://localhost:8108/collections")
         .header("x-typesense-api-key", &typesense_admin_key)
         .json(&document_schema);
 
-    let response = request.send()
-        .await.unwrap()
-        .json::<serde_json::Value>().await.unwrap();
+    let response = request
+        .send()
+        .await
+        .unwrap()
+        .json::<serde_json::Value>()
+        .await
+        .unwrap();
     (StatusCode::ACCEPTED, Json(response))
 }
 
 pub async fn delete_schema(
     State(typesense_secret): State<TypesenseSecret>,
+    Path(id): Path<i64>,
 ) -> impl IntoResponse {
     let client = Client::new();
     let typesense_admin_key = typesense_secret.0.to_owned();
-    let collection = format!("http://localhost:8108/collections/{}", "documents");
+    let collection = format!("http://localhost:8108/collections/{}", id.to_string());
     dbg!(&collection);
 
-    let request = client.delete(collection)
+    let request = client
+        .delete(collection)
         .header("x-typesense-api-key", &typesense_admin_key);
 
-    let response = request.send()
-        .await.unwrap()
-        .json::<serde_json::Value>().await.unwrap();
+    let response = request
+        .send()
+        .await
+        .unwrap()
+        .json::<serde_json::Value>()
+        .await
+        .unwrap();
     (StatusCode::ACCEPTED, Json(response))
 }
 
@@ -49,20 +61,30 @@ pub async fn retrieve_all_schema(
     let client = Client::new();
     let typesense_admin_key = typesense_secret.0.to_owned();
 
-    let request = client.get("http://localhost:8108/collections")
+    let request = client
+        .get("http://localhost:8108/collections")
         .header("x-typesense-api-key", &typesense_admin_key);
 
-    let response = request.send()
-        .await.unwrap()
-        .json::<serde_json::Value>().await.unwrap();
+    let response = request
+        .send()
+        .await
+        .unwrap()
+        .json::<serde_json::Value>()
+        .await
+        .unwrap();
     (StatusCode::ACCEPTED, Json(response))
 }
 
-fn generate_document_schema() -> TypesenseCollection {
+fn generate_document_schema(id: i64) -> TypesenseCollection {
     TypesenseCollection {
-        name: "documents".to_string(),
+        name: id.to_string(),
         num_documents: 0,
         fields: vec![
+            TypesenseField {
+                name: "account_email".to_string(),
+                type_field: "string".to_string(),
+                facet: false,
+            },
             TypesenseField {
                 name: "title".to_string(),
                 type_field: "string".to_string(),
@@ -99,6 +121,6 @@ fn generate_document_schema() -> TypesenseCollection {
                 facet: false,
             },
         ],
-        default_sorting_field: "".to_string(),
+        default_sorting_field: "created_time".to_string(),
     }
 }

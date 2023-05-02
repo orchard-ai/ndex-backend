@@ -119,7 +119,7 @@ pub fn parse_search_response(response: SearchResponse) -> Vec<TypesenseInsert> {
             .unwrap()
             .timestamp();
         results.push(TypesenseInsert {
-            owner_id: "test".to_string(),
+            account_email: "test".to_string(),
             id,
             title,
             contents,
