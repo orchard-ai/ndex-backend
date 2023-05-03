@@ -1,6 +1,6 @@
 use crate::{
     models::user::{AccountType, User},
-    utilities::errors::DbError,
+    utilities::errors::UserError,
 };
 use axum::{
     extract::{Json, Path, State},
@@ -11,13 +11,15 @@ use chrono::{DateTime, Utc};
 use http::StatusCode;
 use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
+use validator::Validate;
 
 use super::{generate_token, SignUpForm, TokenResponse, UpdateUser};
 
 pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
     Json(form): Json<SignUpForm>,
-) -> Result<impl IntoResponse, DbError> {
+) -> impl IntoResponse {
+    form.validate()?;
     let first_name = "".to_string();
     let last_name = "".to_string();
     let email = form.email;
@@ -36,7 +38,7 @@ pub async fn create_new_user(
                 oauth_provider_id = None;
                 oauth_access_token = None;
             } else {
-                return Err(DbError::BadRequest(
+                return Err(UserError::BadRequest(
                     "No password provided for Credentials login".to_string(),
                 ));
             }
@@ -47,7 +49,7 @@ pub async fn create_new_user(
                 oauth_access_token = Some(oat);
                 password_hash = None;
             } else {
-                return Err(DbError::BadRequest(
+                return Err(UserError::BadRequest(
                     "Missing OAuth information for OAuth login".to_string(),
                 ));
             }
@@ -82,7 +84,7 @@ pub async fn update_user(
     Path(id): Path<i64>,
     State(pool): State<Pool<Postgres>>,
     Json(payload): Json<UpdateUser>,
-) -> Result<String, DbError> {
+) -> Result<String, UserError> {
     let account_type = match payload.account_type {
         Some(acc_t) => Some(AccountType::from(acc_t)),
         None => None,
@@ -137,14 +139,14 @@ pub async fn get_users(State(pool): State<Pool<Postgres>>) -> impl IntoResponse 
             let json = serde_json::to_string(&users).unwrap();
             Ok((StatusCode::OK, json))
         }
-        Err(e) => Err(DbError::InternalServerError(e.to_string())),
+        Err(e) => Err(UserError::InternalServerError(e.to_string())),
     }
 }
 
 pub async fn delete_user(
     Path(id): Path<i64>,
     State(pool): State<Pool<Postgres>>,
-) -> Result<(), DbError> {
+) -> Result<(), UserError> {
     let q = r#"DELETE FROM userdb.users WHERE id = $1"#;
     sqlx::query(q).bind(id).execute(&pool).await?;
     Ok(())
