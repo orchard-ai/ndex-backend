@@ -1,24 +1,32 @@
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-
+use validator_derive::Validate;
 pub mod login;
 pub mod migrate;
 pub mod signup;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct SignUpForm {
+    #[validate(email)]
     pub email: String,
+    #[validate(length(min = 8))]
     pub oauth_provider_id: Option<String>,
+    #[validate(length(min = 8))]
     pub oauth_access_token: Option<String>,
+    #[validate(length(min = 8))]
     pub password: Option<String>,
     pub account_type: usize,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Validate)]
 pub struct LoginRequest {
+    #[validate(email)]
     email: String,
+    #[validate(length(min = 8))]
     password: Option<String>,
+    #[validate(length(min = 8))]
     oauth_provider_id: Option<String>,
+    #[validate(length(min = 8))]
     oauth_access_token: Option<String>,
     account_type: usize,
 }

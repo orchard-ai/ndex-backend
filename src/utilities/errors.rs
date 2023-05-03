@@ -1,13 +1,13 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 
-pub enum DbError {
+pub enum UserError {
     BadRequest(String),
     UserNotFound,
     InternalServerError(String),
 }
 
-impl IntoResponse for DbError {
+impl IntoResponse for UserError {
     fn into_response(self) -> axum::response::Response {
         let (status, error_message) = match self {
             Self::InternalServerError(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.as_str()),
@@ -18,8 +18,14 @@ impl IntoResponse for DbError {
     }
 }
 
-impl From<sqlx::Error> for DbError {
+impl From<sqlx::Error> for UserError {
     fn from(err: sqlx::Error) -> Self {
-        DbError::BadRequest(err.to_string())
+        UserError::BadRequest(err.to_string())
+    }
+}
+
+impl From<validator::ValidationErrors> for UserError {
+    fn from(err: validator::ValidationErrors) -> Self {
+        UserError::BadRequest(err.to_string())
     }
 }

@@ -5,6 +5,7 @@ use axum::{
 use bcrypt::verify;
 use http::StatusCode;
 use sqlx::{Pool, Postgres};
+use validator::Validate;
 
 use crate::models::user::User;
 
@@ -14,6 +15,10 @@ pub async fn login(
     State(pool): State<Pool<Postgres>>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
+    match payload.validate() {
+        Ok(_) => (),
+        Err(e) => return Err((StatusCode::BAD_REQUEST, e.to_string())),
+    }
     let q = r#"SELECT * FROM userdb.users WHERE email = $1"#;
     let result = sqlx::query_as::<_, User>(q)
         .bind(payload.email)
