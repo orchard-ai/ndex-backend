@@ -1,8 +1,6 @@
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
-use crate::models::user::AccountType;
-
 pub mod login;
 pub mod migrate;
 pub mod signup;
