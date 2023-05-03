@@ -1,4 +1,4 @@
-use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 
 use crate::models::user::AccountType;
@@ -59,4 +59,20 @@ pub fn generate_token(user_id: &str) -> String {
     };
     let key = EncodingKey::from_secret("your_secret_key".as_ref());
     encode(&header, &claims, &key).expect("Failed to generate token")
+}
+
+fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+    let secret = b"your_secret_key";
+    let mut validation = Validation::default();
+    validation.leeway = 0;
+    validation.validate_exp = true;
+    validation.validate_nbf = false;
+    validation.algorithms = vec![Algorithm::HS256];
+
+    let token_data = decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(secret.as_ref()),
+        &validation,
+    )?;
+    Ok(token_data.claims)
 }
