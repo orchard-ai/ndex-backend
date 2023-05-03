@@ -22,13 +22,17 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use http::{HeaderMap, HeaderValue};
+use http::{header, HeaderMap, HeaderValue};
 use tower_http::add_extension::AddExtensionLayer;
 use tower_http::cors::CorsLayer;
 
 pub fn create_router(app_state: AppState) -> Router {
-    let cors =
-        CorsLayer::new().allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap());
+    let cors = CorsLayer::new()
+        .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
+        .allow_headers(vec![
+            header::CONTENT_TYPE,
+        ]);
+        
     Router::new()
         .route("/", get(root))
         .route("/user/migrate", get(migrate))
