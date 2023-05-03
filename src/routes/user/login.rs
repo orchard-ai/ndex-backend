@@ -14,7 +14,7 @@ pub async fn login(
     State(pool): State<Pool<Postgres>>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
-    let q = r#"SELECT FROM userdb.users WHERE email = $1"#;
+    let q = r#"SELECT * FROM userdb.users WHERE email = $1"#;
     let result = sqlx::query_as::<_, User>(q)
         .bind(payload.email)
         .fetch_one(&pool)
