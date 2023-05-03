@@ -22,7 +22,7 @@ pub struct LoginRequest {
     password: Option<String>,
     oauth_provider_id: Option<String>,
     oauth_access_token: Option<String>,
-    account_type: AccountType,
+    account_type: usize,
 }
 
 #[derive(Debug, Deserialize)]
