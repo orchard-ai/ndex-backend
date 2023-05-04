@@ -38,7 +38,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/login", post(login))
         .route("/user/update/:id=", post(update_user))
         .route("/user/delete/:id=", get(delete_user))
-        .route("user/integrations", get(get_integrations))
+        .route("/user/integrations", get(get_integrations))
         .route("/user/get_all", get(get_users))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
