@@ -26,7 +26,7 @@ CREATE TABLE userdb.integrations (
     oauth_provider_id VARCHAR(255),
     access_token VARCHAR(2000),
     email VARCHAR(255) NOT NULL,
-    integration_data JSONB,
+    extra JSONB,
     scopes VARCHAR(255)[],
     platform integration_platform NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
