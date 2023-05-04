@@ -12,6 +12,7 @@ use crate::{
             schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
         },
         user::{
+            integrations::get_integrations,
             login::login,
             migrate::migrate,
             signup::{create_new_user, delete_user, get_users, update_user},
@@ -22,17 +23,14 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use http::{header, HeaderMap, HeaderValue};
-use tower_http::add_extension::AddExtensionLayer;
+use http::{header, HeaderValue};
 use tower_http::cors::CorsLayer;
 
 pub fn create_router(app_state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
-        .allow_headers(vec![
-            header::CONTENT_TYPE,
-        ]);
-        
+        .allow_headers(vec![header::CONTENT_TYPE]);
+
     Router::new()
         .route("/", get(root))
         .route("/user/migrate", get(migrate))
@@ -40,6 +38,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/login", post(login))
         .route("/user/update/:id=", post(update_user))
         .route("/user/delete/:id=", get(delete_user))
+        .route("user/integrations", get(get_integrations))
         .route("/user/get_all", get(get_users))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
@@ -61,7 +60,6 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/typesense/batch_index", get(batch_index))
         .route("/typesense/single_index", post(single_index))
         .with_state(app_state)
-        .layer(AddExtensionLayer::new(HeaderMap::new())) // Add middleware to extract headers from the request
         .layer(cors)
 }
 

@@ -17,6 +17,7 @@ use super::{generate_token, SignUpForm, TokenResponse, UpdateUser};
 
 pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
+    State(jwt_secret): State<String>,
     Json(form): Json<SignUpForm>,
 ) -> impl IntoResponse {
     form.validate()?;
@@ -75,7 +76,7 @@ pub async fn create_new_user(
         .fetch_one(&pool)
         .await?;
     let id: i64 = result.try_get("id").unwrap();
-    let token = generate_token(&id.to_string());
+    let token = generate_token(&id.to_string(), &jwt_secret);
     let res: TokenResponse = TokenResponse { token };
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }
