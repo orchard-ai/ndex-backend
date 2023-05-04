@@ -13,6 +13,7 @@ use super::{generate_token, LoginRequest, TokenResponse};
 
 pub async fn login(
     State(pool): State<Pool<Postgres>>,
+    State(jwt_secret): State<String>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
     match payload.validate() {
@@ -30,13 +31,13 @@ pub async fn login(
             let id = &user.id.to_string();
             if let Some(password) = payload.password {
                 if verify(&password, &user.password_hash.unwrap()).is_ok() {
-                    let token = generate_token(id);
+                    let token = generate_token(id, &jwt_secret);
                     res = TokenResponse { token };
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
                 }
             } else if let Some(_) = payload.oauth_provider_id {
                 if let Some(_) = payload.oauth_access_token {
-                    let token = generate_token(id);
+                    let token = generate_token(id, &jwt_secret);
                     res = TokenResponse { token };
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
                 }
