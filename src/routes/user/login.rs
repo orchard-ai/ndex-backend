@@ -4,6 +4,7 @@ use axum::{
 };
 use bcrypt::verify;
 use http::StatusCode;
+use serde_json::json;
 use sqlx::{Pool, Postgres};
 use validator::Validate;
 
@@ -18,7 +19,12 @@ pub async fn login(
 ) -> impl IntoResponse {
     match payload.validate() {
         Ok(_) => (),
-        Err(e) => return Err((StatusCode::BAD_REQUEST, e.to_string())),
+        Err(e) => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error": e.to_string()})),
+            ))
+        }
     }
     let q = r#"SELECT * FROM userdb.users WHERE email = $1"#;
     let result = sqlx::query_as::<_, User>(q)
@@ -27,27 +33,27 @@ pub async fn login(
         .await;
     match result {
         Ok(user) => {
-            let res;
             let id = &user.id.to_string();
+            let token = generate_token(id, &jwt_secret);
+            let res = TokenResponse { token };
             if let Some(password) = payload.password {
                 if verify(&password, &user.password_hash.unwrap()).is_ok() {
-                    let token = generate_token(id, &jwt_secret);
-                    res = TokenResponse { token };
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
                 }
             } else if let Some(_) = payload.oauth_provider_id {
                 if let Some(_) = payload.oauth_access_token {
-                    let token = generate_token(id, &jwt_secret);
-                    res = TokenResponse { token };
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
                 }
             }
 
             Err((
                 StatusCode::UNAUTHORIZED,
-                "Invalid login credentials".to_string(),
+                Json(json!({"error": "Invalid login credentials".to_string()})),
             ))
         }
-        Err(_) => Err((StatusCode::NOT_FOUND, "User not found".to_string())),
+        Err(_) => Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "User not found".to_string()})),
+        )),
     }
 }
