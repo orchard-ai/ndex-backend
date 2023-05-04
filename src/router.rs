@@ -12,7 +12,7 @@ use crate::{
             schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
         },
         user::{
-            integrations::get_integrations,
+            integrations::{add_integration, get_integrations},
             login::login,
             migrate::migrate,
             signup::{create_new_user, delete_user, get_users, update_user},
@@ -39,6 +39,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/update/:id=", post(update_user))
         .route("/user/delete/:id=", get(delete_user))
         .route("/user/integrations", get(get_integrations))
+        .route("/user/add_integration", post(add_integration))
         .route("/user/get_all", get(get_users))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
