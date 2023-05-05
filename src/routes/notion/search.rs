@@ -7,7 +7,7 @@ use crate::{
         typesense::{Platform, RowType, TypesenseInsert},
         user::validate_token,
     },
-    utilities::{errors::UserError, token_wrapper::NotionAccessSecret},
+    utilities::errors::UserError,
 };
 
 use axum::{extract::State, response::IntoResponse, Json};

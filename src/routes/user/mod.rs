@@ -53,7 +53,7 @@ pub struct Claims {
     pub exp: usize,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct TokenResponse {
     token: String,
 }

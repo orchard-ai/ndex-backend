@@ -77,6 +77,7 @@ pub async fn create_new_user(
         .await?;
     let id: i64 = result.try_get("id").unwrap();
     let token = generate_token(&id.to_string(), &jwt_secret);
+    dbg!(&token);
     let res: TokenResponse = TokenResponse { token };
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }

@@ -36,6 +36,7 @@ pub async fn login(
             let id = &user.id.to_string();
             let token = generate_token(id, &jwt_secret);
             let res = TokenResponse { token };
+            dbg!(&res);
             if let Some(password) = payload.password {
                 if verify(&password, &user.password_hash.unwrap()).is_ok() {
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
