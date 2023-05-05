@@ -48,9 +48,9 @@ pub struct UpdateUser {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Claims {
-    sub: String,
-    exp: usize,
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -68,7 +68,10 @@ pub fn generate_token(user_id: &str, jwt_secret: &str) -> String {
     encode(&header, &claims, &key).expect("Failed to generate token")
 }
 
-fn validate_token(token: &str, jwt_secret: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+pub fn validate_token(
+    token: &str,
+    jwt_secret: &str,
+) -> Result<Claims, jsonwebtoken::errors::Error> {
     let mut validation = Validation::default();
     validation.leeway = 0;
     validation.validate_exp = true;
