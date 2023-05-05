@@ -1,25 +1,56 @@
 use std::collections::HashMap;
 
 use crate::{
+    models::integration::Integration,
     routes::{
         notion::retrieve_blocks::{get_page_blocks, parse_block_response},
         typesense::{Platform, RowType, TypesenseInsert},
+        user::validate_token,
     },
-    utilities::token_wrapper::NotionAccessSecret,
+    utilities::{errors::UserError, token_wrapper::NotionAccessSecret},
 };
 
 use axum::{extract::State, response::IntoResponse, Json};
 use chrono::DateTime;
-use http::StatusCode;
+use http::{HeaderMap, StatusCode};
 use reqwest::Client;
 use serde_json::{json, Value};
 use serde_jsonlines::write_json_lines;
+use sqlx::{Pool, Postgres};
 
 use super::SearchResponse;
 
-pub async fn index(State(notion_access_token): State<NotionAccessSecret>) -> impl IntoResponse {
+pub async fn index_handler(
+    State(pool): State<Pool<Postgres>>,
+    State(jwt_secret): State<String>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let auth_header = headers.get("Authorization").unwrap();
+    let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
+    if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
+        let user_id = claims.sub;
+        let access_token = get_access_token(&pool, &user_id).await?;
+        let results = index(&access_token).await;
+        return Ok((StatusCode::OK, Json(results)));
+    }
+    Err(UserError::Unauthorized("Invalid token".to_string()))
+}
+
+async fn get_access_token(pool: &Pool<Postgres>, user_id: &str) -> Result<String, UserError> {
+    let q = r#"
+        SELECT * FROM userdb.integrations
+        WHERE user_id = $1 AND integration_platform = 'notion'
+    "#;
+    let result = sqlx::query_as::<_, Integration>(q)
+        .bind(user_id)
+        .fetch_one(pool)
+        .await?;
+    Ok(result.access_token.unwrap())
+}
+
+pub async fn index(access_token: &str) -> HashMap<String, TypesenseInsert> {
     let client = Client::new();
-    let bearer = format!("Bearer {}", &notion_access_token.0);
+    let bearer = format!("Bearer {}", access_token);
     let mut cursor: Option<String> = None;
     let mut results: HashMap<String, TypesenseInsert> = HashMap::new();
     loop {
@@ -55,10 +86,10 @@ pub async fn index(State(notion_access_token): State<NotionAccessSecret>) -> imp
     results.extend(block_results);
     write_json_lines("notion_blocks.jsonl", results.values()).unwrap();
     dbg!(&results.len());
-    (StatusCode::OK, Json(results))
+    results
 }
 
-pub async fn search(client: Client, bearer: String, cursor: Option<String>) -> SearchResponse {
+async fn search(client: Client, bearer: String, cursor: Option<String>) -> SearchResponse {
     let search_query = match cursor {
         Some(uuid) => json!({
             "query": "",
@@ -88,7 +119,7 @@ pub async fn search(client: Client, bearer: String, cursor: Option<String>) -> S
     response
 }
 
-pub fn parse_search_response(response: SearchResponse) -> Vec<TypesenseInsert> {
+fn parse_search_response(response: SearchResponse) -> Vec<TypesenseInsert> {
     let mut results: Vec<TypesenseInsert> = Vec::new();
     for result in response.results {
         let properties = result.properties;

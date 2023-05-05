@@ -5,6 +5,7 @@ pub enum UserError {
     BadRequest(String),
     UserNotFound,
     InternalServerError(String),
+    Unauthorized(String),
 }
 
 impl IntoResponse for UserError {
@@ -13,6 +14,7 @@ impl IntoResponse for UserError {
             Self::InternalServerError(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.as_str()),
             Self::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
             Self::UserNotFound => (StatusCode::NOT_FOUND, "User Not Found"),
+            Self::Unauthorized(ref msg) => (StatusCode::UNAUTHORIZED, msg.as_str()),
         };
         (status, Json(json!({ "error": error_message }))).into_response()
     }
