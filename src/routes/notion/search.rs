@@ -42,7 +42,7 @@ async fn get_access_token(pool: &Pool<Postgres>, user_id: &str) -> Result<String
         WHERE user_id = $1 AND integration_platform = 'notion'
     "#;
     let result = sqlx::query_as::<_, Integration>(q)
-        .bind(user_id)
+        .bind(user_id.parse::<i64>().unwrap())
         .fetch_one(pool)
         .await?;
     Ok(result.access_token.unwrap())
