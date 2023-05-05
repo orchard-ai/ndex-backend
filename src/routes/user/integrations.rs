@@ -3,7 +3,10 @@ use http::{HeaderMap, StatusCode};
 use serde_json::json;
 use sqlx::{Pool, Postgres};
 
-use crate::models::integration::{AddIntegration, Integration};
+use crate::{
+    models::integration::{AddIntegration, Integration},
+    utilities::errors::UserError,
+};
 
 use super::validate_token;
 
@@ -15,19 +18,17 @@ pub async fn get_integrations(
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
-        let id = claims.sub;
-        let q = r#"select email, oauth_provider_id, access_token, platform, scopes from userdb.integrations where user_id = $1"#;
+        let id = claims.sub.parse::<i64>().unwrap();
+        dbg!(&id);
+        let q = r#"SELECT *, platform as "integration_platform: IntegrationPlatform" from userdb.integrations 
+            WHERE user_id = $1"#;
         let results = sqlx::query_as::<_, Integration>(q)
             .bind(id)
             .fetch_all(&pool)
-            .await
-            .unwrap();
+            .await?;
         return Ok((StatusCode::OK, Json(json!({ "integrations": results }))));
     }
-    Err((
-        StatusCode::UNAUTHORIZED,
-        Json(json!({"error": "Invalid Authorization".to_string()})),
-    ))
+    Err(UserError::Unauthorized("Invalid token".to_string()))
 }
 
 pub async fn add_integration(
@@ -38,8 +39,10 @@ pub async fn add_integration(
 ) -> impl IntoResponse {
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
+    dbg!(&payload);
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
-        let user_id = claims.sub;
+        let user_id = claims.sub.parse::<i64>().unwrap();
+        dbg!(&user_id);
         let email = payload.email;
         let oauth_provider_id = payload.oauth_provider_id;
         let platform = payload.integration_platform;
@@ -48,7 +51,7 @@ pub async fn add_integration(
         let q = r#"
             INSERT INTO userdb.integrations (user_id, email, oauth_provider_id, platform, access_token, extra) 
             VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING email, oauth_provider_id, platform, scopes
+            RETURNING *, platform as "integration_platform: IntegrationPlatform"
         "#;
         let row = sqlx::query_as::<_, Integration>(q)
             .bind(user_id)
@@ -58,12 +61,8 @@ pub async fn add_integration(
             .bind(access_token)
             .bind(extra)
             .fetch_one(&pool)
-            .await
-            .unwrap();
+            .await?;
         return Ok((StatusCode::OK, Json(json!({ "integrations": row }))));
     }
-    Err((
-        StatusCode::UNAUTHORIZED,
-        Json(json!({"error": "Invalid Authorization".to_string()})),
-    ))
+    Err(UserError::Unauthorized("Invalid token".to_string()))
 }
