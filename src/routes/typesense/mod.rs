@@ -1,8 +1,6 @@
 pub mod index;
 pub mod schema_control;
 
-use base64::Engine;
-use rand::RngCore;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 
@@ -66,9 +64,14 @@ pub enum RowType {
     Task,
 }
 
-fn generate_api_key() -> String {
-    let mut rng = rand::thread_rng();
-    let mut bytes = [0u8; 32];
-    rng.fill_bytes(&mut bytes);
-    base64::engine::general_purpose::STANDARD.encode(bytes)
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiKeyResponse {
+    pub actions: Vec<String>,
+    pub collections: Vec<String>,
+    pub description: String,
+    #[serde(rename = "expires_at")]
+    pub expires_at: Option<i64>,
+    pub id: i64,
+    pub value: String,
 }
