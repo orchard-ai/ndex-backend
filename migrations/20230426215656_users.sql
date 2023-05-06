@@ -34,3 +34,11 @@ CREATE TABLE userdb.integrations (
     FOREIGN KEY (user_id) REFERENCES userdb.users (id) ON DELETE CASCADE,
     UNIQUE (user_id, email, platform)
 );
+
+CREATE TABLE userdb.typesense (
+    user_id INTEGER PRIMARY KEY,
+    api_key VARCHAR(255) UNIQUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES userdb.users (id) ON DELETE CASCADE
+);

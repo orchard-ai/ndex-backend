@@ -1005,6 +1005,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "base64 0.21.0",
  "bcrypt",
  "chrono",
  "dotenv",
@@ -1015,6 +1016,7 @@ dependencies = [
  "oauth2",
  "openssl",
  "postgres-openssl",
+ "rand",
  "reqwest",
  "serde",
  "serde-jsonlines",
