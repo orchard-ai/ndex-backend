@@ -9,7 +9,7 @@ use crate::{
         notion::{auth::obtain_access_token, retrieve_blocks::block_query, search::index_handler},
         typesense::{
             index::{batch_index, single_index},
-            schema_control::{create_document_schema, delete_schema, retrieve_all_schema},
+            schema_control::{delete_schema, retrieve_all_schema},
         },
         user::{
             integrations::{add_integration, get_api_key, get_integrations, remove_integration},
@@ -51,10 +51,6 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/notion/obtain_access_token", post(obtain_access_token))
         .route("/notion/index", get(index_handler))
         .route("/notion/retrieve_notion_blocks", post(block_query))
-        .route(
-            "/typesense/create_typesense_schema",
-            get(create_document_schema),
-        )
         .route("/typesense/delete_typesense_schema", get(delete_schema))
         .route(
             "/typesense/retrieve_typesense_schema",

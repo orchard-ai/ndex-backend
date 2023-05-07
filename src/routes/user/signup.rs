@@ -1,6 +1,7 @@
 use crate::{
     models::user::{AccountType, User},
-    utilities::errors::UserError,
+    routes::typesense::schema_control::{create_document_schema, update_api_key},
+    utilities::{errors::UserError, token_wrapper::TypesenseSecret},
 };
 use axum::{
     extract::{Json, Path, State},
@@ -18,6 +19,7 @@ use super::{generate_token, SignUpForm, TokenResponse, UpdateUser};
 pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
     State(jwt_secret): State<String>,
+    State(typesense_secret): State<TypesenseSecret>,
     Json(form): Json<SignUpForm>,
 ) -> impl IntoResponse {
     form.validate()?;
@@ -76,6 +78,10 @@ pub async fn create_new_user(
         .fetch_one(&pool)
         .await?;
     let id: i64 = result.try_get("id").unwrap();
+    dbg!("Creating Typesense schema");
+    create_document_schema(typesense_secret.0.to_owned(), id).await?;
+    dbg!("Updating Typesense API key");
+    update_api_key(typesense_secret.0.to_owned(), &pool, id).await?;
     let token = generate_token(&id.to_string(), &jwt_secret);
     dbg!(&token);
     let res: TokenResponse = TokenResponse { token };
