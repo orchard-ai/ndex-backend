@@ -12,11 +12,10 @@ use serde_json::json;
 use sqlx::{Pool, Postgres};
 
 pub async fn create_document_schema(
-    State(typesense_secret): State<TypesenseSecret>,
-    Path(id): Path<i64>,
-) -> impl IntoResponse {
+    typesense_admin_key: String,
+    id: i64,
+) -> Result<String, UserError> {
     let client = Client::new();
-    let typesense_admin_key = typesense_secret.0.to_owned();
     let document_schema = generate_document_schema(id);
 
     let request = client
@@ -24,14 +23,16 @@ pub async fn create_document_schema(
         .header("x-typesense-api-key", &typesense_admin_key)
         .json(&document_schema);
 
-    let response = request
+    match request
         .send()
         .await
         .unwrap()
         .json::<serde_json::Value>()
         .await
-        .unwrap();
-    (StatusCode::ACCEPTED, Json(response))
+    {
+        Ok(_) => Ok("Schema created".to_string()),
+        Err(e) => Err(UserError::InternalServerError(e.to_string())),
+    }
 }
 
 pub async fn delete_schema(
@@ -78,11 +79,10 @@ pub async fn retrieve_all_schema(
 }
 
 pub async fn update_api_key(
-    State(typesense_secret): State<TypesenseSecret>,
-    State(pool): State<Pool<Postgres>>,
-    Path(id): Path<i64>,
-) -> impl IntoResponse {
-    let typesense_admin_key = typesense_secret.0.to_owned();
+    typesense_admin_key: String,
+    pool: &Pool<Postgres>,
+    id: i64,
+) -> Result<String, UserError> {
     let mut headers = HeaderMap::new();
     headers.append(
         "x-typesense-api-key",
@@ -92,26 +92,27 @@ pub async fn update_api_key(
     match create_read_api_key(&client, id).await {
         Ok((api_id, api_key)) => {
             let q = r#"
+                WITH old_values AS (
+                    SELECT api_id
+                    FROM userdb.typesense
+                    WHERE user_id = $1
+                )
                 INSERT INTO userdb.typesense (user_id, api_id, api_key)
                 VALUES ($1, $2, $3)
                 ON CONFLICT (user_id)
                 DO UPDATE SET api_id = EXCLUDED.api_id, api_key = EXCLUDED.api_key, updated_at = CURRENT_TIMESTAMP
-                RETURNING userdb.typesense.api_id;
+                RETURNING (SELECT api_id FROM old_values) AS old_api_id;
             "#;
-            let old_id: Option<i64> = sqlx::query_scalar(q)
+            let old_id: Option<Option<i64>> = sqlx::query_scalar(q)
                 .bind(id)
                 .bind(api_id)
                 .bind(api_key)
-                .fetch_optional(&pool)
+                .fetch_optional(pool)
                 .await?;
-            match old_id {
-                Some(old_id) => delete_api_key(&client, old_id).await,
-                None => (),
+            if let Some(Some(old_id)) = old_id {
+                delete_api_key(&client, old_id).await;
             }
-            Ok((
-                StatusCode::ACCEPTED,
-                Json(json!({ "message": "API key updated successfully" })),
-            ))
+            Ok("API key updated successfully".to_string())
         }
         Err(e) => Err(UserError::InternalServerError(e.to_string())),
     }
@@ -137,9 +138,12 @@ pub async fn create_read_api_key(client: &Client, id: i64) -> Result<(i64, Strin
         "actions": ["documents:search"],
         "collections": [id.to_string()],
     });
-    let request = client.get("http://localhost:8108/collections").json(&json);
-    match request.send().await.unwrap().json::<ApiKeyResponse>().await {
-        Ok(response) => Ok((response.id, response.value)),
+    let request = client.post("http://localhost:8108/keys").json(&json);
+    match request.send().await?.json::<ApiKeyResponse>().await {
+        Ok(api_response) => {
+            dbg!(&api_response);
+            Ok((api_response.id, api_response.value))
+        }
         Err(e) => Err(e),
     }
 }
