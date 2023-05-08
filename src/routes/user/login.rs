@@ -4,26 +4,27 @@ use axum::{
 };
 use bcrypt::verify;
 use http::StatusCode;
-use serde_json::json;
 use sqlx::{Pool, Postgres};
 use validator::Validate;
 
-use crate::models::user::User;
+use crate::{
+    models::user::User,
+    routes::typesense::schema_control::update_api_key,
+    utilities::{errors::UserError, token_wrapper::TypesenseSecret},
+};
 
 use super::{generate_token, LoginRequest, TokenResponse};
 
 pub async fn login(
     State(pool): State<Pool<Postgres>>,
     State(jwt_secret): State<String>,
+    State(typesense_secret): State<TypesenseSecret>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
     match payload.validate() {
         Ok(_) => (),
         Err(e) => {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                Json(json!({"error": e.to_string()})),
-            ))
+            return Err(UserError::Unauthorized(e.to_string()));
         }
     }
     let q = r#"SELECT * FROM userdb.users WHERE email = $1"#;
@@ -39,6 +40,7 @@ pub async fn login(
             dbg!(&res);
             if let Some(password) = payload.password {
                 if verify(&password, &user.password_hash.unwrap()).is_ok() {
+                    update_api_key(typesense_secret.0.to_owned(), &pool, user.id).await?;
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
                 }
             } else if let Some(_) = payload.oauth_provider_id {
@@ -46,15 +48,10 @@ pub async fn login(
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
                 }
             }
-
-            Err((
-                StatusCode::UNAUTHORIZED,
-                Json(json!({"error": "Invalid login credentials".to_string()})),
+            Err(UserError::Unauthorized(
+                "Invalid password or oauth access token".to_string(),
             ))
         }
-        Err(_) => Err((
-            StatusCode::NOT_FOUND,
-            Json(json!({"error": "User not found".to_string()})),
-        )),
+        Err(_) => Err(UserError::Unauthorized("User not found".to_string())),
     }
 }
