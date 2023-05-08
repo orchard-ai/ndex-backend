@@ -208,16 +208,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "charset"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18e9079d1a12a2cc2bffb5db039c43661836ead4082120d5844f02555aca2d46"
-dependencies = [
- "base64 0.13.1",
- "encoding_rs",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -365,12 +355,6 @@ dependencies = [
  "quote",
  "syn",
 ]
-
-[[package]]
-name = "data-encoding"
-version = "2.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23d8666cb01533c39dde32bcbab8e227b4ed6679b2c925eba05feabea39508fb"
 
 [[package]]
 name = "digest"
@@ -962,17 +946,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mailparse"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b56570f5f8c0047260d1c8b5b331f62eb9c660b9dd4071a8c46f8c7d3f280aa"
-dependencies = [
- "charset",
- "data-encoding",
- "quoted_printable",
-]
-
-[[package]]
 name = "matches"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -998,41 +971,6 @@ name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
-
-[[package]]
-name = "mentat-backend"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "bcrypt",
- "chrono",
- "dotenv",
- "futures",
- "http",
- "jsonwebtoken",
- "mailparse",
- "oauth2",
- "openssl",
- "postgres-openssl",
- "reqwest",
- "serde",
- "serde-jsonlines",
- "serde_derive",
- "serde_json",
- "serde_urlencoded",
- "sqlx",
- "tokio",
- "tokio-util",
- "tower",
- "tower-http 0.4.0",
- "tower-service",
- "tracing",
- "tracing-subscriber",
- "url",
- "validator",
- "validator_derive",
-]
 
 [[package]]
 name = "mime"
@@ -1084,6 +1022,40 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "tempfile",
+]
+
+[[package]]
+name = "ndex"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "bcrypt",
+ "chrono",
+ "dotenv",
+ "futures",
+ "http",
+ "jsonwebtoken",
+ "oauth2",
+ "openssl",
+ "postgres-openssl",
+ "reqwest",
+ "serde",
+ "serde-jsonlines",
+ "serde_derive",
+ "serde_json",
+ "serde_urlencoded",
+ "sqlx",
+ "tokio",
+ "tokio-util",
+ "tower",
+ "tower-http 0.4.0",
+ "tower-service",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "validator",
+ "validator_derive",
 ]
 
 [[package]]
@@ -1437,12 +1409,6 @@ checksum = "8856d8364d252a14d474036ea1358d63c9e6965c8e5c1885c18f73d70bff9c7b"
 dependencies = [
  "proc-macro2",
 ]
-
-[[package]]
-name = "quoted_printable"
-version = "0.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a24039f627d8285853cc90dcddf8c1ebfaa91f834566948872b225b9a28ed1b6"
 
 [[package]]
 name = "rand"
