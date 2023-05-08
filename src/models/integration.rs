@@ -24,6 +24,7 @@ pub struct AddIntegration {
     pub oauth_provider_id: Option<String>,
     pub integration_platform: IntegrationPlatform,
     pub access_token: String,
+    pub scopes: Option<Vec<String>>,
     pub extra: Option<Value>,
 }
 

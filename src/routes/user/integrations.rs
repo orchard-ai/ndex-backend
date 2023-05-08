@@ -47,9 +47,12 @@ pub async fn add_integration(
         let platform = payload.integration_platform;
         let access_token = payload.access_token;
         let extra = payload.extra;
+        let scopes = payload.scopes;
         let q = r#"
-            INSERT INTO userdb.integrations (user_id, email, oauth_provider_id, platform, access_token, extra) 
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO userdb.integrations (user_id, email, oauth_provider_id, platform, access_token, extra, scopes) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (user_id, email, platform)
+            DO UPDATE SET oauth_provider_id = EXCLUDED.oauth_provider_id, access_token = EXCLUDED.access_token, extra = EXCLUDED.extra, scopes = EXCLUDED.scopes
             RETURNING *, platform as "integration_platform: IntegrationPlatform"
         "#;
         let row = sqlx::query_as::<_, Integration>(q)
@@ -59,6 +62,7 @@ pub async fn add_integration(
             .bind(platform)
             .bind(access_token)
             .bind(extra)
+            .bind(scopes)
             .fetch_one(&pool)
             .await?;
         return Ok((StatusCode::OK, Json(json!({ "integrations": row }))));
