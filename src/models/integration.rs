@@ -22,7 +22,7 @@ pub struct Integration {
 pub struct AddIntegration {
     pub email: String,
     pub oauth_provider_id: Option<String>,
-    pub integration_platform: IntegrationPlatform,
+    pub integration_platform: usize,
     pub access_token: String,
     pub scopes: Option<Vec<String>>,
     pub extra: Option<Value>,

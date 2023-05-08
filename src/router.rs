@@ -30,7 +30,7 @@ use tracing::info;
 pub fn create_router(app_state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
-        .allow_headers(vec![header::CONTENT_TYPE]);
+        .allow_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     Router::new()
         .route("/", get(root))
