@@ -4,10 +4,10 @@ use crate::{
     models::integration::Integration,
     routes::{
         notion::retrieve_blocks::{get_page_blocks, parse_block_response},
-        typesense::{Platform, RowType, TypesenseInsert},
+        typesense::{index::batch_index, Platform, RowType, TypesenseInsert},
         user::validate_token,
     },
-    utilities::errors::UserError,
+    utilities::{errors::UserError, token_wrapper::TypesenseSecret},
 };
 
 use axum::{extract::State, response::IntoResponse, Json};
@@ -16,33 +16,51 @@ use http::{HeaderMap, StatusCode};
 use reqwest::Client;
 use serde_json::{json, Value};
 use serde_jsonlines::write_json_lines;
-use sqlx::{Pool, Postgres};
+use sqlx::{Pool, Postgres, Type};
 
-use super::SearchResponse;
+use super::{IndexNotionQuery, SearchResponse};
 
 pub async fn index_handler(
     State(pool): State<Pool<Postgres>>,
     State(jwt_secret): State<String>,
+    State(typesense_secret): State<TypesenseSecret>,
     headers: HeaderMap,
+    Json(payload): Json<IndexNotionQuery>,
 ) -> impl IntoResponse {
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let user_id = claims.sub;
-        let access_token = get_access_token(&pool, &user_id).await?;
+        let email = payload.notion_email;
+        let access_token = get_access_token(&pool, &user_id, &email).await?;
         let results = index(&access_token).await;
-        return Ok((StatusCode::OK, Json(results)));
+        match batch_index(typesense_secret.0, user_id, Platform::Notion).await {
+            Ok(_) => {
+                return Ok((
+                    StatusCode::OK,
+                    Json(json!({"message": "indexing complete".to_string()})),
+                ))
+            }
+            Err(e) => {
+                return Err(UserError::Unauthorized(e.to_string()));
+            }
+        }
     }
     Err(UserError::Unauthorized("Invalid token".to_string()))
 }
 
-async fn get_access_token(pool: &Pool<Postgres>, user_id: &str) -> Result<String, UserError> {
+async fn get_access_token(
+    pool: &Pool<Postgres>,
+    user_id: &str,
+    email: &str,
+) -> Result<String, UserError> {
     let q = r#"
         SELECT * FROM userdb.integrations
-        WHERE user_id = $1 AND integration_platform = 'notion'
+        WHERE user_id = $1 AND email = $2 AND integration_platform = 'notion'
     "#;
     let result = sqlx::query_as::<_, Integration>(q)
         .bind(user_id.parse::<i64>().unwrap())
+        .bind(email)
         .fetch_one(pool)
         .await?;
     Ok(result.access_token.unwrap())

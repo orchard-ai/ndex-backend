@@ -45,6 +45,7 @@ pub async fn login(
                 }
             } else if let Some(_) = payload.oauth_provider_id {
                 if let Some(_) = payload.oauth_access_token {
+                    update_api_key(typesense_secret.0.to_owned(), &pool, user.id).await?;
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
                 }
             }
