@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use anyhow::Context;
 use dotenv::dotenv;
-use mentat_backend::{
+use ndex::{
     app_state::AppState,
     run,
     utilities::token_wrapper::{NotionAccessSecret, NotionClientId, TypesenseSecret},

@@ -53,3 +53,16 @@ impl FromStr for IntegrationPlatform {
         }
     }
 }
+
+impl From<usize> for IntegrationPlatform {
+    fn from(index: usize) -> Self {
+        match index {
+            0 => IntegrationPlatform::File,
+            1 => IntegrationPlatform::Notion,
+            2 => IntegrationPlatform::Google,
+            3 => IntegrationPlatform::Discord,
+            4 => IntegrationPlatform::Slack,
+            _ => panic!("Invalid IntegrationPlatform index"),
+        }
+    }
+}

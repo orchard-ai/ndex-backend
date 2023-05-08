@@ -8,10 +8,12 @@ use axum::response::IntoResponse;
 use axum::{extract::State, Json};
 use chrono::DateTime;
 use http::StatusCode;
+use tracing::{debug, error, info};
 
 use super::GMailUser;
 
 pub async fn retrieve_messages_list(State(state): State<AppState>) -> impl IntoResponse {
+    info!("Retrieving messages list");
     let access_code = state.get_google_access_code();
     let client = reqwest::Client::new();
     let mut cursor: Option<String> = None;
@@ -46,16 +48,18 @@ pub async fn retrieve_messages_list(State(state): State<AppState>) -> impl IntoR
         if let Some(next_page_cursor) = &next_cursor {
             cursor = Some(next_page_cursor.to_owned());
         } else {
+            error!("Reached final page of messages list");
             break;
         }
     }
-    dbg!(&message_list.len());
+    debug!("Total messages retrieved: {}", message_list.len());
     let sample = &message_list[0..10];
     let mut loaded_messages: Vec<ParsedMail> = vec![];
     for msg in sample {
         let loaded = get_message(&msg.id, &access_code, &test_user).await;
         loaded_messages.push(loaded);
     }
+    info!("Returning messages list");
     (StatusCode::OK, Json(loaded_messages))
 }
 

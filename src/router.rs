@@ -25,6 +25,7 @@ use axum::{
 };
 use http::{header, HeaderValue};
 use tower_http::cors::CorsLayer;
+use tracing::info;
 
 pub fn create_router(app_state: AppState) -> Router {
     let cors = CorsLayer::new()
@@ -63,5 +64,6 @@ pub fn create_router(app_state: AppState) -> Router {
 }
 
 async fn root() -> &'static str {
+    info!("Got the request");
     "Hello, World!"
 }

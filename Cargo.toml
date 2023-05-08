@@ -1,5 +1,5 @@
 [package]
-name = "mentat-backend"
+name = "ndex"
 version = "0.1.0"
 edition = "2021"
 
@@ -36,7 +36,6 @@ postgres-openssl = "0.5.0"
 tracing-subscriber = "0.3.17"
 tracing = "0.1.37"
 bcrypt = "0.14.0"
-mailparse = "0.14.0"
 jsonwebtoken = "8.3.0"
 validator = "0.16.0"
 validator_derive = "0.16.0"
