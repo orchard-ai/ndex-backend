@@ -8,7 +8,7 @@ use crate::{
         login::google_auth::{google_auth, google_auth_sucess},
         notion::{auth::obtain_access_token, retrieve_blocks::block_query, search::index_handler},
         typesense::{
-            index::{batch_index, single_index},
+            index::single_index,
             schema_control::{delete_schema, retrieve_all_schema},
         },
         user::{
@@ -57,7 +57,6 @@ pub fn create_router(app_state: AppState) -> Router {
             "/typesense/retrieve_typesense_schema",
             get(retrieve_all_schema),
         )
-        .route("/typesense/batch_index", get(batch_index))
         .route("/typesense/single_index", post(single_index))
         .with_state(app_state)
         .layer(cors)

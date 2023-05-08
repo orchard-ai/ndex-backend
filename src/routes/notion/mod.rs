@@ -25,6 +25,11 @@ RESPONSE:
 -> ok or err (wrong password, network error)
  */
 
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct IndexNotionQuery {
+    pub notion_email: String,
+}
+
 /* ------------------- SEARCH QUERY --------------------------- */
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
