@@ -18,6 +18,14 @@ pub struct Integration {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
+#[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
+pub struct IntegrationResponse {
+    pub email: String,
+    pub oauth_provider_id: Option<String>,
+    pub scopes: Option<Vec<String>>,
+    pub integration_platform: IntegrationPlatform,
+}
+
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddIntegration {
     pub email: String,
