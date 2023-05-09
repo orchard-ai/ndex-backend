@@ -1,22 +1,6 @@
-use std::str::FromStr;
-
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
-#[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
-pub struct Integration {
-    pub id: Option<i64>,
-    pub user_id: i64,
-    pub oauth_provider_id: Option<String>,
-    pub access_token: Option<String>,
-    pub email: String,
-    pub extra: Option<Value>,
-    pub scopes: Option<Vec<String>>,
-    pub platform: IntegrationPlatform,
-    pub created_at: Option<DateTime<Utc>>,
-    pub updated_at: Option<DateTime<Utc>>,
-}
+use std::str::FromStr;
 
 #[derive(sqlx::FromRow, Debug, Serialize, Deserialize)]
 pub struct IntegrationResponse {
