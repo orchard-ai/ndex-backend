@@ -4,7 +4,7 @@ use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
 
 use crate::{
-    models::integration::{AddIntegration, Integration, IntegrationPlatform, IntegrationResponse},
+    models::integration::{AddIntegration, IntegrationPlatform, IntegrationResponse},
     utilities::errors::UserError,
 };
 
@@ -53,9 +53,9 @@ pub async fn add_integration(
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (user_id, email, platform)
             DO UPDATE SET oauth_provider_id = EXCLUDED.oauth_provider_id, access_token = EXCLUDED.access_token, extra = EXCLUDED.extra, scopes = EXCLUDED.scopes
-            RETURNING *, platform as "integration_platform: IntegrationPlatform"
+            RETURNING email, oauth_provider_id, scopes, platform as "integration_platform: IntegrationPlatform"
         "#;
-        let row = sqlx::query_as::<_, Integration>(q)
+        let row = sqlx::query_as::<_, IntegrationResponse>(q)
             .bind(user_id)
             .bind(email)
             .bind(oauth_provider_id)

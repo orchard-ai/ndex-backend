@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use crate::{
-    models::integration::Integration,
     routes::{
         notion::retrieve_blocks::{get_page_blocks, parse_block_response},
         typesense::{index::batch_index, Platform, RowType, TypesenseInsert},
@@ -16,7 +15,7 @@ use http::{HeaderMap, StatusCode};
 use reqwest::Client;
 use serde_json::{json, Value};
 use serde_jsonlines::write_json_lines;
-use sqlx::{Pool, Postgres, Type};
+use sqlx::{Pool, Postgres};
 
 use super::{IndexNotionQuery, SearchResponse};
 
@@ -33,7 +32,7 @@ pub async fn index_handler(
         let user_id = claims.sub;
         let email = payload.notion_email;
         let access_token = get_access_token(&pool, &user_id, &email).await?;
-        let results = index(&access_token).await;
+        index(&access_token).await;
         match batch_index(typesense_secret.0, user_id, Platform::Notion).await {
             Ok(_) => {
                 return Ok((
@@ -55,15 +54,15 @@ async fn get_access_token(
     email: &str,
 ) -> Result<String, UserError> {
     let q = r#"
-        SELECT * FROM userdb.integrations
+        SELECT access_token FROM userdb.integrations
         WHERE user_id = $1 AND email = $2 AND integration_platform = 'notion'
     "#;
-    let result = sqlx::query_as::<_, Integration>(q)
+    let result: String = sqlx::query_scalar(q)
         .bind(user_id.parse::<i64>().unwrap())
         .bind(email)
         .fetch_one(pool)
         .await?;
-    Ok(result.access_token.unwrap())
+    Ok(result)
 }
 
 pub async fn index(access_token: &str) -> HashMap<String, TypesenseInsert> {
