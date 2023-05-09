@@ -65,7 +65,15 @@ pub async fn add_integration(
             .bind(scopes)
             .fetch_one(&pool)
             .await?;
-        return Ok((StatusCode::OK, Json(json!({ "integrations": row }))));
+
+        // Send back only required fields
+        let updated_row = IntegrationResponse {
+            email: row.email,
+            oauth_provider_id: row.oauth_provider_id,
+            scopes: row.scopes,
+            integration_platform: row.integration_platform,
+        };
+        return Ok((StatusCode::OK, Json(json!({ "integrations": updated_row }))));
     }
     Err(UserError::Unauthorized("Invalid token".to_string()))
 }
