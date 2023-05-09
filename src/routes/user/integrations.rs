@@ -4,7 +4,7 @@ use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
 
 use crate::{
-    models::integration::{AddIntegration, Integration, IntegrationPlatform},
+    models::integration::{AddIntegration, Integration, IntegrationPlatform, IntegrationResponse},
     utilities::errors::UserError,
 };
 
@@ -20,9 +20,9 @@ pub async fn get_integrations(
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let id = claims.sub.parse::<i64>().unwrap();
         dbg!(&id);
-        let q = r#"SELECT *, platform as "integration_platform: IntegrationPlatform" from userdb.integrations 
+        let q = r#"SELECT email, oauth_provider_id, scopes, platform as integration_platform FROM userdb.integrations 
             WHERE user_id = $1"#;
-        let results = sqlx::query_as::<_, Integration>(q)
+        let results = sqlx::query_as::<_, IntegrationResponse>(q)
             .bind(id)
             .fetch_all(&pool)
             .await?;
