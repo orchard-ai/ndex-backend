@@ -84,7 +84,10 @@ pub async fn create_new_user(
     update_api_key(typesense_secret.0.to_owned(), &pool, id).await?;
     let token = generate_token(&id.to_string(), &jwt_secret);
     dbg!(&token);
-    let res: TokenResponse = TokenResponse { token };
+    let res = TokenResponse {
+        user_id: id.to_string(),
+        token,
+    };
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }
 

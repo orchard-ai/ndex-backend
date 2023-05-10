@@ -55,6 +55,7 @@ pub struct Claims {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TokenResponse {
+    user_id: String,
     token: String,
 }
 
