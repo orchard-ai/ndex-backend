@@ -3,18 +3,18 @@ use chrono::DateTime;
 use reqwest::Client;
 use serde_json::Value;
 
-use super::block_models;
+use super::block_models::{BlockObject, BlockResponse};
 
-pub async fn get_page_blocks(client: &Client, page_id: &str) -> Vec<block_models::Result> {
-    let mut cursor = None;
-    let mut results: Vec<block_models::Result> = vec![];
+pub async fn get_page_blocks(client: &Client, page_id: &str) -> Vec<BlockObject> {
+    let mut block_cursor = None;
+    let mut results: Vec<BlockObject> = vec![];
     loop {
-        let response = get_page_blocks_page(&client, page_id, cursor).await;
+        let response = get_blocks(&client, page_id, block_cursor).await;
         for res in response.results {
             results.push(res);
         }
         if response.next_cursor != Value::Null {
-            cursor = Some(response.next_cursor.to_string().replace("\"", ""));
+            block_cursor = Some(response.next_cursor.to_string().replace("\"", ""));
         } else {
             break;
         }
@@ -22,11 +22,7 @@ pub async fn get_page_blocks(client: &Client, page_id: &str) -> Vec<block_models
     results
 }
 
-async fn get_page_blocks_page(
-    client: &Client,
-    page_id: &str,
-    cursor: Option<String>,
-) -> block_models::BlockResponse {
+async fn get_blocks(client: &Client, page_id: &str, cursor: Option<String>) -> BlockResponse {
     let cursor_string = if let Some(cursor) = cursor {
         format!("?start_cursor={}", cursor)
     } else {
@@ -42,16 +38,17 @@ async fn get_page_blocks_page(
         .send()
         .await
         .unwrap()
-        .json::<block_models::BlockResponse>()
+        .json::<BlockResponse>()
         .await
         .unwrap();
 
     response
 }
-pub async fn parse_block_response(
-    response: block_models::Result,
-    parent_name: String,
-    parent_url: String,
+
+pub async fn parse_block(
+    response: BlockObject,
+    parent_name: &str,
+    parent_url: &str,
 ) -> Option<(String, TypesenseInsert)> {
     let block_id = response.id;
     let block_type = response.type_field.to_string().replace("\"", "");
@@ -87,9 +84,9 @@ pub async fn parse_block_response(
         TypesenseInsert {
             account_email: "test".to_string(),
             id: block_id,
-            title,
+            title: title.to_owned(),
             contents,
-            url,
+            url: url.to_owned(),
             added_by: None,
             created_time,
             last_edited_time,

@@ -6,7 +6,7 @@ use serde_json::Value;
 #[serde(rename_all = "camelCase")]
 pub struct BlockResponse {
     pub object: String,
-    pub results: Vec<Result>,
+    pub results: Vec<BlockObject>,
     #[serde(rename = "next_cursor")]
     pub next_cursor: Value,
     #[serde(rename = "has_more")]
@@ -18,7 +18,7 @@ pub struct BlockResponse {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Result {
+pub struct BlockObject {
     pub object: String,
     pub id: String,
     pub parent: Parent,
@@ -226,5 +226,4 @@ pub struct Annotations4 {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Block {
-}
+pub struct Block {}
