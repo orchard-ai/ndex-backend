@@ -10,7 +10,7 @@ use crate::{
 };
 
 use axum::{extract::State, response::IntoResponse, Json};
-use chrono::DateTime;
+use chrono::{format, DateTime};
 use http::{HeaderMap, StatusCode};
 use reqwest::Client;
 use serde_json::{json, Value};
@@ -32,7 +32,7 @@ pub async fn index_handler(
         let user_id = claims.sub;
         let email = payload.notion_email;
         let access_token = get_access_token(&pool, &user_id, &email).await?;
-        index(&access_token).await;
+        index(&access_token, &user_id).await;
         match batch_index(typesense_secret.0, user_id, Platform::Notion).await {
             Ok(_) => {
                 return Ok((
@@ -65,7 +65,7 @@ async fn get_access_token(
     Ok(result)
 }
 
-pub async fn index(access_token: &str) -> HashMap<String, TypesenseInsert> {
+pub async fn index(access_token: &str, user_id: &str) -> HashMap<String, TypesenseInsert> {
     let client = Client::new();
     let bearer = format!("Bearer {}", access_token);
     let mut cursor: Option<String> = None;
@@ -101,7 +101,8 @@ pub async fn index(access_token: &str) -> HashMap<String, TypesenseInsert> {
         }
     }
     results.extend(block_results);
-    write_json_lines("notion_blocks.jsonl", results.values()).unwrap();
+    let filepath = format!("notion_blocks_{}.jsonl", user_id);
+    write_json_lines(filepath, results.values()).unwrap();
     dbg!(&results.len());
     results
 }
