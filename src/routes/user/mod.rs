@@ -1,6 +1,9 @@
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
+use sqlx::{Pool, Postgres};
 use validator_derive::Validate;
+
+use crate::{models::integration::Platform, utilities::errors::UserError};
 pub mod integrations;
 pub mod login;
 pub mod migrate;
@@ -57,6 +60,25 @@ pub struct Claims {
 struct TokenResponse {
     user_id: String,
     token: String,
+}
+
+pub async fn get_access_token(
+    pool: &Pool<Postgres>,
+    user_id: &str,
+    email: &str,
+    platform: Platform,
+) -> Result<String, UserError> {
+    let q = r#"
+        SELECT access_token FROM userdb.integrations
+        WHERE user_id = $1 AND email = $2 AND integration_platform = $3
+    "#;
+    let result: String = sqlx::query_scalar(q)
+        .bind(user_id.parse::<i64>().unwrap())
+        .bind(email)
+        .bind(platform)
+        .fetch_one(pool)
+        .await?;
+    Ok(result)
 }
 
 pub fn generate_token(user_id: &str, jwt_secret: &str) -> String {

@@ -4,10 +4,11 @@ use std::{
 };
 
 use crate::{
+    models::integration::Platform,
     routes::{
         notion::retrieve_blocks::{get_page_blocks, parse_block},
-        typesense::{index::batch_index, Platform, RowType, TypesenseInsert},
-        user::validate_token,
+        typesense::{index::batch_index, Product, RowType, TypesenseInsert},
+        user::{get_access_token, validate_token},
     },
     utilities::{errors::UserError, token_wrapper::TypesenseSecret},
 };
@@ -20,25 +21,25 @@ use serde_json::{json, Value};
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
 
-use super::{IndexNotionQuery, SearchResponse};
+use super::{IndexNotionRequest, SearchResponse};
 
-pub async fn index_handler(
+pub async fn index_notion_handler(
     State(pool): State<Pool<Postgres>>,
     State(jwt_secret): State<String>,
     State(typesense_secret): State<TypesenseSecret>,
     headers: HeaderMap,
-    Json(payload): Json<IndexNotionQuery>,
+    Json(payload): Json<IndexNotionRequest>,
 ) -> impl IntoResponse {
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let user_id = claims.sub;
         let email = payload.notion_email;
-        let access_token = get_access_token(&pool, &user_id, &email).await?;
+        let access_token = get_access_token(&pool, &user_id, &email, Platform::Notion).await?;
         index(&access_token, &user_id)
             .await
             .map_err(|e| UserError::InternalServerError(e.to_string()))?;
-        match batch_index(&typesense_secret.0, &user_id, Platform::Notion).await {
+        match batch_index(&typesense_secret.0, &user_id, Product::Notion).await {
             Ok(_) => {
                 return Ok((
                     StatusCode::OK,
@@ -46,28 +47,11 @@ pub async fn index_handler(
                 ))
             }
             Err(e) => {
-                return Err(UserError::Unauthorized(e.to_string()));
+                return Err(UserError::InternalServerError(e.to_string()));
             }
         }
     }
     Err(UserError::Unauthorized("Invalid token".to_string()))
-}
-
-async fn get_access_token(
-    pool: &Pool<Postgres>,
-    user_id: &str,
-    email: &str,
-) -> Result<String, UserError> {
-    let q = r#"
-        SELECT access_token FROM userdb.integrations
-        WHERE user_id = $1 AND email = $2 AND integration_platform = 'notion'
-    "#;
-    let result: String = sqlx::query_scalar(q)
-        .bind(user_id.parse::<i64>().unwrap())
-        .bind(email)
-        .fetch_one(pool)
-        .await?;
-    Ok(result)
 }
 
 pub async fn index(access_token: &str, user_id: &str) -> Result<String, String> {
@@ -170,7 +154,7 @@ fn parse_pages(response: SearchResponse) -> Vec<TypesenseInsert> {
         let title = format!("{}{}", prop_name, prop_title).replace("\"", "");
         let contents = title.clone();
         let url = result.url;
-        let platform = Platform::Notion;
+        let platform = Product::Notion;
         let type_field = RowType::File;
         let last_edited_time = DateTime::parse_from_rfc3339(&result.last_edited_time)
             .unwrap()

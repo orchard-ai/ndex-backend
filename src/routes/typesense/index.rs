@@ -4,12 +4,12 @@ use http::StatusCode;
 use reqwest::{Client, Response};
 use tokio::fs;
 
-use super::{Platform, TypesenseInsert};
+use super::{Product, TypesenseInsert};
 
 pub async fn batch_index(
     typesense_admin_key: &str,
     user_id: &str,
-    platform: Platform,
+    platform: Product,
 ) -> Result<String, String> {
     let url = format!(
         "http://localhost:8108/collections/{}/documents/import?action=create",
@@ -20,13 +20,13 @@ pub async fn batch_index(
         .header("x-typesense-api-key", typesense_admin_key);
     let response: Result<Response, reqwest::Error>;
     match platform {
-        Platform::Notion => {
+        Product::Notion => {
             let filepath = format!("notion_blocks_{}.jsonl", user_id);
             let notion_file = fs::read_to_string(filepath).await.unwrap();
             let notion_request = client.body(notion_file);
             response = notion_request.send().await;
         }
-        Platform::GCalendar => {
+        Product::GCalendar => {
             let filepath = format!("google_calendar_events_{}.jsonl", user_id);
             let google_calendar_file = fs::read_to_string(filepath).await.unwrap();
             let google_calendar_request = client.body(google_calendar_file);

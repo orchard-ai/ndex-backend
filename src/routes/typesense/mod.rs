@@ -24,7 +24,7 @@ pub struct TypesenseField {
     pub facet: bool,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct TypesenseInsert {
     pub account_email: String,
     pub id: String,
@@ -32,7 +32,7 @@ pub struct TypesenseInsert {
     pub contents: String,
     pub url: String,
     pub added_by: Option<String>,
-    pub platform: Platform,
+    pub platform: Product,
     #[serde(rename = "type")]
     pub type_field: RowType,
     #[serde(rename = "last_edited_time")]
@@ -43,7 +43,7 @@ pub struct TypesenseInsert {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Platform {
+pub enum Product {
     #[default]
     File,
     Notion,

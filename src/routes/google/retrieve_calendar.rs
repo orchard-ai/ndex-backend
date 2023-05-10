@@ -1,5 +1,5 @@
 use crate::models::gcalendar::GCalendarList;
-use crate::routes::typesense::{Platform, RowType, TypesenseInsert};
+use crate::routes::typesense::{Product, RowType, TypesenseInsert};
 use crate::{app_state::AppState, models::gevents::EventsList};
 
 use axum::response::IntoResponse;
@@ -94,7 +94,7 @@ fn parse_events(events: Vec<EventsList>) -> Vec<TypesenseInsert> {
                 let last_edited_time = DateTime::parse_from_rfc3339(&event.created)
                     .unwrap()
                     .timestamp();
-                let platform = Platform::GCalendar;
+                let platform = Product::GCalendar;
                 let type_field = RowType::Event;
                 all_events.push(TypesenseInsert {
                     account_email: "test".to_string(),
