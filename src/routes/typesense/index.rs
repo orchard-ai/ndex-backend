@@ -7,8 +7,8 @@ use tokio::fs;
 use super::{Platform, TypesenseInsert};
 
 pub async fn batch_index(
-    typesense_admin_key: String,
-    user_id: String,
+    typesense_admin_key: &str,
+    user_id: &str,
     platform: Platform,
 ) -> Result<String, String> {
     let url = format!(
@@ -17,18 +17,18 @@ pub async fn batch_index(
     );
     let client = Client::new()
         .post(url)
-        .header("x-typesense-api-key", &typesense_admin_key);
+        .header("x-typesense-api-key", typesense_admin_key);
     let response: Result<Response, reqwest::Error>;
     match platform {
         Platform::Notion => {
-            let file_path = format!("notion_blocks_{}.jsonl", user_id);
-            let notion_file = fs::read_to_string(file_path).await.unwrap();
+            let filepath = format!("notion_blocks_{}.jsonl", user_id);
+            let notion_file = fs::read_to_string(filepath).await.unwrap();
             let notion_request = client.body(notion_file);
             response = notion_request.send().await;
         }
         Platform::GCalendar => {
-            let file_path = format!("google_calendar_events_{}.jsonl", user_id);
-            let google_calendar_file = fs::read_to_string(file_path).await.unwrap();
+            let filepath = format!("google_calendar_events_{}.jsonl", user_id);
+            let google_calendar_file = fs::read_to_string(filepath).await.unwrap();
             let google_calendar_request = client.body(google_calendar_file);
             response = google_calendar_request.send().await;
         }
