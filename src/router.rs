@@ -50,7 +50,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/google/calendar/code", get(code_retrieve_calendar_list))
         .route("/google/mail", post(index_gmail_handler))
         .route("/notion/obtain_access_token", post(obtain_access_token))
-        .route("/notion/index", get(index_notion_handler))
+        .route("/notion/index", post(index_notion_handler))
         .route("/typesense/delete_typesense_schema", get(delete_schema))
         .route(
             "/typesense/retrieve_typesense_schema",
