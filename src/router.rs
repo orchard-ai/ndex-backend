@@ -6,7 +6,7 @@ use crate::{
             retrieve_mail::retrieve_messages_list,
         },
         login::google_auth::{google_auth, google_auth_sucess},
-        notion::{auth::obtain_access_token, retrieve_blocks::block_query, search::index_handler},
+        notion::{auth::obtain_access_token, search::index_handler},
         typesense::{
             index::single_index,
             schema_control::{delete_schema, retrieve_all_schema},
@@ -51,7 +51,6 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/google/mail", get(retrieve_messages_list))
         .route("/notion/obtain_access_token", post(obtain_access_token))
         .route("/notion/index", get(index_handler))
-        .route("/notion/retrieve_notion_blocks", post(block_query))
         .route("/typesense/delete_typesense_schema", get(delete_schema))
         .route(
             "/typesense/retrieve_typesense_schema",
