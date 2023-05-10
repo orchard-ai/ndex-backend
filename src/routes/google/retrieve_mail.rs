@@ -32,7 +32,7 @@ pub async fn index_gmail_handler(
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let user_id = claims.sub;
-        let email = payload.gmail;
+        let email = payload.email;
         let access_token = get_access_token(&pool, &user_id, &email, Platform::Google).await?;
         index(&access_token, &user_id, &email)
             .await
