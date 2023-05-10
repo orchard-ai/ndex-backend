@@ -10,8 +10,8 @@ use crate::{
 };
 
 use axum::{extract::State, response::IntoResponse, Json};
-use chrono::{format, DateTime};
-use http::{HeaderMap, StatusCode};
+use chrono::DateTime;
+use http::{HeaderMap, HeaderValue, StatusCode};
 use reqwest::Client;
 use serde_json::{json, Value};
 use serde_jsonlines::write_json_lines;
@@ -66,12 +66,19 @@ async fn get_access_token(
 }
 
 pub async fn index(access_token: &str, user_id: &str) -> HashMap<String, TypesenseInsert> {
-    let client = Client::new();
+    let mut headers = HeaderMap::new();
     let bearer = format!("Bearer {}", access_token);
+    headers.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
+    headers.append(
+        "notion-version",
+        HeaderValue::from_str("2022-06-28").unwrap(),
+    );
+    let client = Client::builder().default_headers(headers).build().unwrap();
+
     let mut cursor: Option<String> = None;
     let mut results: HashMap<String, TypesenseInsert> = HashMap::new();
     loop {
-        let response = search(client.clone(), bearer.clone(), cursor.clone()).await;
+        let response = search(&client, cursor).await;
         let next_cursor = response.next_cursor.clone();
         let parsed_response = parse_search_response(response);
         for res in parsed_response {
@@ -85,7 +92,7 @@ pub async fn index(access_token: &str, user_id: &str) -> HashMap<String, Typesen
     }
     let mut block_results: HashMap<String, TypesenseInsert> = HashMap::new();
     for (key, parent) in &results {
-        let blocks = get_page_blocks(client.clone(), bearer.clone(), key.clone()).await;
+        let blocks = get_page_blocks(&client, &key).await;
         for block in blocks {
             if !results.contains_key(&block.id) {
                 dbg!(format!("fetching for {}: {}", &parent.title, &block.id));
@@ -107,7 +114,7 @@ pub async fn index(access_token: &str, user_id: &str) -> HashMap<String, Typesen
     results
 }
 
-async fn search(client: Client, bearer: String, cursor: Option<String>) -> SearchResponse {
+async fn search(client: &Client, cursor: Option<String>) -> SearchResponse {
     let search_query = match cursor {
         Some(uuid) => json!({
             "query": "",
@@ -122,8 +129,6 @@ async fn search(client: Client, bearer: String, cursor: Option<String>) -> Searc
 
     let request = client
         .post("https://api.notion.com/v1/search")
-        .header("authorization", &bearer)
-        .header("notion-version", "2022-06-28")
         .json(&search_query);
 
     let response = request
