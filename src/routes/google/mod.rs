@@ -5,5 +5,5 @@ pub mod retrieve_mail;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct IndexGMailRequest {
-    gmail: String,
+    email: String,
 }

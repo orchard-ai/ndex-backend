@@ -34,7 +34,7 @@ pub async fn index_notion_handler(
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let user_id = claims.sub;
-        let email = payload.notion_email;
+        let email = payload.email;
         let access_token = get_access_token(&pool, &user_id, &email, Platform::Notion).await?;
         index(&access_token, &user_id)
             .await

@@ -27,7 +27,7 @@ RESPONSE:
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct IndexNotionRequest {
-    pub notion_email: String,
+    pub email: String,
 }
 
 /* ------------------- SEARCH QUERY --------------------------- */
