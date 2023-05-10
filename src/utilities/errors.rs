@@ -1,3 +1,5 @@
+use tracing::error;
+
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 
@@ -22,6 +24,7 @@ impl IntoResponse for UserError {
 
 impl From<sqlx::Error> for UserError {
     fn from(err: sqlx::Error) -> Self {
+        error!("SQLx Error: {}", err);
         UserError::BadRequest(err.to_string())
     }
 }

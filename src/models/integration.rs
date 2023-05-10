@@ -7,7 +7,7 @@ pub struct IntegrationResponse {
     pub email: String,
     pub oauth_provider_id: Option<String>,
     pub scopes: Option<Vec<String>>,
-    pub integration_platform: Platform,
+    pub platform: Platform,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ pub struct AddIntegration {
 
 #[derive(sqlx::Type, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "integration_platform", rename_all = "lowercase")]
+#[sqlx(type_name = "platform", rename_all = "lowercase")]
 pub enum Platform {
     File,
     Notion,
