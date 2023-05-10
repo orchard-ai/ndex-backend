@@ -36,7 +36,10 @@ pub async fn login(
         Ok(user) => {
             let id = &user.id.to_string();
             let token = generate_token(id, &jwt_secret);
-            let res = TokenResponse { token };
+            let res = TokenResponse {
+                user_id: id.to_string(),
+                token,
+            };
             dbg!(&res);
             if let Some(password) = payload.password {
                 if verify(&password, &user.password_hash.unwrap()).is_ok() {
