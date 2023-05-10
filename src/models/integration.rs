@@ -7,7 +7,7 @@ pub struct IntegrationResponse {
     pub email: String,
     pub oauth_provider_id: Option<String>,
     pub scopes: Option<Vec<String>>,
-    pub integration_platform: IntegrationPlatform,
+    pub integration_platform: Platform,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -23,7 +23,7 @@ pub struct AddIntegration {
 #[derive(sqlx::Type, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(type_name = "integration_platform", rename_all = "lowercase")]
-pub enum IntegrationPlatform {
+pub enum Platform {
     File,
     Notion,
     Google,
@@ -31,29 +31,29 @@ pub enum IntegrationPlatform {
     Slack,
 }
 
-impl FromStr for IntegrationPlatform {
+impl FromStr for Platform {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "file" => Ok(IntegrationPlatform::File),
-            "notion" => Ok(IntegrationPlatform::Notion),
-            "google" => Ok(IntegrationPlatform::Google),
-            "discord" => Ok(IntegrationPlatform::Discord),
-            "slack" => Ok(IntegrationPlatform::Slack),
+            "file" => Ok(Platform::File),
+            "notion" => Ok(Platform::Notion),
+            "google" => Ok(Platform::Google),
+            "discord" => Ok(Platform::Discord),
+            "slack" => Ok(Platform::Slack),
             _ => Err(format!("Invalid integration platform: {}", s)),
         }
     }
 }
 
-impl From<usize> for IntegrationPlatform {
+impl From<usize> for Platform {
     fn from(index: usize) -> Self {
         match index {
-            0 => IntegrationPlatform::File,
-            1 => IntegrationPlatform::Notion,
-            2 => IntegrationPlatform::Google,
-            3 => IntegrationPlatform::Discord,
-            4 => IntegrationPlatform::Slack,
+            0 => Platform::File,
+            1 => Platform::Notion,
+            2 => Platform::Google,
+            3 => Platform::Discord,
+            4 => Platform::Slack,
             _ => panic!("Invalid IntegrationPlatform index"),
         }
     }

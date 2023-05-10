@@ -3,10 +3,10 @@ use crate::{
     routes::{
         google::{
             retrieve_calendar::{code_retrieve_calendar_list, retrieve_calendar_list},
-            retrieve_mail::retrieve_messages_list,
+            retrieve_mail::index_gmail_handler,
         },
         login::google_auth::{google_auth, google_auth_sucess},
-        notion::{auth::obtain_access_token, search::index_handler},
+        notion::{auth::obtain_access_token, search::index_notion_handler},
         typesense::{
             index::single_index,
             schema_control::{delete_schema, retrieve_all_schema},
@@ -48,9 +48,9 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/google/auth/response", get(google_auth_sucess))
         .route("/google/calendar", get(retrieve_calendar_list))
         .route("/google/calendar/code", get(code_retrieve_calendar_list))
-        .route("/google/mail", get(retrieve_messages_list))
+        .route("/google/mail", post(index_gmail_handler))
         .route("/notion/obtain_access_token", post(obtain_access_token))
-        .route("/notion/index", get(index_handler))
+        .route("/notion/index", get(index_notion_handler))
         .route("/typesense/delete_typesense_schema", get(delete_schema))
         .route(
             "/typesense/retrieve_typesense_schema",

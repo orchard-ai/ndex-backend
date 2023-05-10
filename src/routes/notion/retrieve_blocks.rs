@@ -1,4 +1,4 @@
-use crate::routes::typesense::{Platform, RowType, TypesenseInsert};
+use crate::routes::typesense::{Product, RowType, TypesenseInsert};
 use chrono::DateTime;
 use reqwest::Client;
 use serde_json::Value;
@@ -90,7 +90,7 @@ pub async fn parse_block(
             added_by: None,
             created_time,
             last_edited_time,
-            platform: Platform::Notion,
+            platform: Product::Notion,
             type_field: RowType::File,
         },
     ))

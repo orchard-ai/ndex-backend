@@ -4,7 +4,7 @@ use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
 
 use crate::{
-    models::integration::{AddIntegration, IntegrationPlatform, IntegrationResponse},
+    models::integration::{AddIntegration, IntegrationResponse, Platform},
     utilities::errors::UserError,
 };
 
@@ -44,7 +44,7 @@ pub async fn add_integration(
         let user_id = claims.sub.parse::<i64>().unwrap();
         let email = payload.email;
         let oauth_provider_id = payload.oauth_provider_id;
-        let platform = IntegrationPlatform::from(payload.integration_platform);
+        let platform = Platform::from(payload.integration_platform);
         let access_token = payload.access_token;
         let extra = payload.extra;
         let scopes = payload.scopes;
@@ -90,7 +90,7 @@ pub async fn remove_integration(
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let user_id = claims.sub.parse::<i64>().unwrap();
         let email = payload.email;
-        let platform = IntegrationPlatform::from(payload.integration_platform);
+        let platform = Platform::from(payload.integration_platform);
         let q = r#"DELETE FROM userdb.integrations WHERE user_id = $1 AND email = $2 AND platform = $3"#;
         sqlx::query(q)
             .bind(user_id)
