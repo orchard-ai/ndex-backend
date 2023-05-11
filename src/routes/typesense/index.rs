@@ -18,32 +18,27 @@ pub async fn batch_index(
     let client = Client::new()
         .post(url)
         .header("x-typesense-api-key", typesense_admin_key);
-    let response: Result<Response, reqwest::Error>;
+    let response: Response;
+    let filepath: String;
     match platform {
         Product::Notion => {
-            let filepath = format!("notion_blocks_{}.jsonl", user_id);
-            let notion_file = fs::read_to_string(filepath).await.unwrap();
-            let notion_request = client.body(notion_file);
-            response = notion_request.send().await;
+            filepath = format!("notion_blocks_{}.jsonl", user_id);
         }
         Product::GCalendar => {
-            let filepath = format!("google_calendar_events_{}.jsonl", user_id);
-            let google_calendar_file = fs::read_to_string(filepath).await.unwrap();
-            let google_calendar_request = client.body(google_calendar_file);
-            response = google_calendar_request.send().await;
+            filepath = format!("google_calendar_events_{}.jsonl", user_id);
+        }
+        Product::GMail => {
+            filepath = format!("google_mail_{}.jsonl", user_id);
         }
         _ => return Err("Invalid platform".to_string()),
     }
-    match response {
-        Ok(response) => {
-            if response.status() == StatusCode::OK {
-                return Ok("Success".to_string());
-            } else {
-                return Err("Error".to_string());
-            }
-        }
-        Err(_) => return Err("Error".to_string()),
+    let file = fs::read_to_string(filepath).await.unwrap();
+    let request = client.body(file);
+    response = request.send().await.map_err(|e| e.to_string())?;
+    if response.status() == StatusCode::OK {
+        return Ok("Success".to_string());
     }
+    return Err("Error".to_string());
 }
 
 pub async fn single_index(
