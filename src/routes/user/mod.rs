@@ -70,7 +70,7 @@ pub async fn get_access_token(
 ) -> Result<String, UserError> {
     let q = r#"
         SELECT access_token FROM userdb.integrations
-        WHERE user_id = $1 AND email = $2 AND integration_platform = $3
+        WHERE user_id = $1 AND email = $2 AND platform = $3
     "#;
     let result: String = sqlx::query_scalar(q)
         .bind(user_id.parse::<i64>().unwrap())
