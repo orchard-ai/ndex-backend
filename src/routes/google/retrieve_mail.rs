@@ -53,7 +53,7 @@ pub async fn index_gmail_handler(
 }
 
 async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String, String> {
-    let filepath = format!("gmail_blocks_{}.jsonl", user_id);
+    let filepath = format!("google_mail_{}.jsonl", user_id);
     File::create(&filepath).map_err(|e| e.to_string())?;
 
     let mut headers = HeaderMap::new();
