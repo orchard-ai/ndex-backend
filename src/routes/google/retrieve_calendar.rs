@@ -103,6 +103,7 @@ fn parse_events(events: Vec<Event>, email: &str) -> Vec<TypesenseInsert> {
             event.description.unwrap_or("".to_string())
         );
         let url = event.html_link;
+        let added_by = Some(event.creator.email);
         let created_time = DateTime::parse_from_rfc3339(&event.created)
             .unwrap()
             .timestamp();
@@ -117,7 +118,7 @@ fn parse_events(events: Vec<Event>, email: &str) -> Vec<TypesenseInsert> {
             title,
             contents,
             url,
-            added_by: None,
+            added_by,
             created_time,
             last_edited_time,
             platform,
