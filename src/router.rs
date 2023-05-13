@@ -43,7 +43,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/get_typesense_key", get(get_api_key))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
-        .route("/google/index_calendar", get(index_gcal_handler))
+        .route("/google/index_calendar", post(index_gcal_handler))
         .route("/google/index_gmail", post(index_gmail_handler))
         .route("/notion/obtain_access_token", post(obtain_access_token))
         .route("/notion/index", post(index_notion_handler))
