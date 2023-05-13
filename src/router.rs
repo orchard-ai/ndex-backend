@@ -1,10 +1,7 @@
 use crate::{
     app_state::AppState,
     routes::{
-        google::{
-            retrieve_calendar::{code_retrieve_calendar_list, retrieve_calendar_list},
-            retrieve_mail::index_gmail_handler,
-        },
+        google::{retrieve_calendar::index_gcal_handler, retrieve_mail::index_gmail_handler},
         login::google_auth::{google_auth, google_auth_sucess},
         notion::{auth::obtain_access_token, search::index_notion_handler},
         typesense::{
@@ -46,8 +43,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/get_typesense_key", get(get_api_key))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
-        .route("/google/calendar", get(retrieve_calendar_list))
-        .route("/google/calendar/code", get(code_retrieve_calendar_list))
+        .route("/google/index_calendar", get(index_gcal_handler))
         .route("/google/index_gmail", post(index_gmail_handler))
         .route("/notion/obtain_access_token", post(obtain_access_token))
         .route("/notion/index", post(index_notion_handler))

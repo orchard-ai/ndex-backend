@@ -7,3 +7,8 @@ pub mod retrieve_mail;
 pub struct IndexGMailRequest {
     email: String,
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct IndexGCalRequest {
+    email: String,
+}
