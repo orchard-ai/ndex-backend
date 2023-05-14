@@ -52,6 +52,9 @@ pub async fn google_auth(State(mut state): State<AppState>) -> impl IntoResponse
             "https://www.googleapis.com/auth/gmail.readonly".to_string(),
         ))
         .add_scope(Scope::new(
+            "https://www.googleapis.com/auth/drive.file".to_string(),
+        ))
+        .add_scope(Scope::new(
             "https://www.googleapis.com/auth/plus.me".to_string(),
         ))
         .set_pkce_challenge(pkce_code_challenge)

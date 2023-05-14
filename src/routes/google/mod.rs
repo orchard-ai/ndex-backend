@@ -1,7 +1,8 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
-pub mod retrieve_calendar;
-pub mod retrieve_mail;
+pub mod calendar;
+pub mod drive;
+pub mod mail;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct IndexGMailRequest {
