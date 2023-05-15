@@ -52,7 +52,7 @@ pub async fn google_auth(State(mut state): State<AppState>) -> impl IntoResponse
             "https://www.googleapis.com/auth/gmail.readonly".to_string(),
         ))
         .add_scope(Scope::new(
-            "https://www.googleapis.com/auth/drive.file".to_string(),
+            "https://www.googleapis.com/auth/drive.readonly".to_string(),
         ))
         .add_scope(Scope::new(
             "https://www.googleapis.com/auth/plus.me".to_string(),
@@ -103,7 +103,10 @@ pub async fn google_auth_sucess(
         Ok(token) => {
             let access_code = token.access_token();
             state.set_google_access_code(access_code.clone());
-            println!("Google returned the following token:\n{:?}\n", access_code);
+            println!(
+                "Google returned the following token:\n{:?}\n",
+                access_code.secret()
+            );
         }
         Err(e) => println!("Google returned an error:\n{:?}\n", e),
     }
