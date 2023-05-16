@@ -1,9 +1,10 @@
-use crate::models::gdrive::GDriveResponse;
+use crate::models::gdrive::{File, GDriveResponse};
 
 use axum::response::IntoResponse;
 use axum::Json;
 use http::{HeaderMap, HeaderValue, StatusCode};
 use reqwest::{Client, Error};
+use serde_json::{from_str, Value};
 use tracing::info;
 
 pub async fn gdrive_request(headers: HeaderMap) -> Result<impl IntoResponse, String> {
@@ -13,7 +14,9 @@ pub async fn gdrive_request(headers: HeaderMap) -> Result<impl IntoResponse, Str
     let bearer = format!("Bearer {}", access_token);
     h.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     let client = Client::builder().default_headers(h).build().unwrap();
-    let response: GDriveResponse = retrieve_gdrive(&client).await.map_err(|e| e.to_string())?;
+    let response: Vec<Value> = retrieve_file_list(&client)
+        .await
+        .map_err(|e| e.to_string())?;
     Ok((StatusCode::OK, Json(response)))
 }
 
@@ -59,12 +62,57 @@ pub async fn gdrive_request(headers: HeaderMap) -> Result<impl IntoResponse, Str
 //     Ok("Indexed".to_string())
 // }
 
-async fn retrieve_gdrive(client: &Client) -> Result<GDriveResponse, Error> {
+async fn retrieve_file_list(client: &Client) -> Result<Vec<Value>, Error> {
     info!("Retrieving messages list");
-    dbg!(client);
-    let next_url = "https://www.googleapis.com/drive/v3/files".to_string();
-    let response = client.get(next_url).send().await?;
-    let files: GDriveResponse = response.json().await?;
+    let mut cursor: Option<String> = None;
+    let mut file_list: Vec<Value> = vec![];
+    loop {
+        let url: String;
+        if let Some(page_id) = cursor {
+            url = format!(
+                "https://www.googleapis.com/drive/v3/files?pageToken={}&fields=kind,incompleteSearch,nextPageToken,files(id,name,mimeType,size,createdTime)",
+                page_id
+            )
+        } else {
+            url = "https://www.googleapis.com/drive/v3/files?fields=kind,incompleteSearch,nextPageToken,files(id,name,mimeType,size,createdTime)".to_string();
+        }
+        dbg!(&url);
+        let text = client.get(&url).send().await?.text().await?;
+
+        let response: Result<GDriveResponse, serde_json::Error> = from_str(&text);
+
+        match response {
+            Ok(parsed) => {
+                file_list.extend(parsed.files);
+                if file_list.len() > 500 {
+                    break;
+                }
+                if let Some(next_page) = parsed.next_page_token {
+                    cursor = Some(next_page);
+                } else {
+                    break;
+                }
+            }
+            Err(e) => {
+                println!("Failed to parse response: {:?}", e);
+                println!("Raw response: {}", from_str::<Value>(&text).unwrap());
+                dbg!(file_list.len());
+                break;
+            }
+        }
+    }
     info!("Finished retrieving messages list");
-    Ok(files)
+    // let file = &file_list.last().unwrap().id;
+    // let file_object = get_file_object(file, client).await?;
+    // dbg!(file_object);
+    Ok(file_list)
+}
+
+async fn get_file_object(file_id: &str, client: &Client) -> Result<serde_json::Value, Error> {
+    let url = format!(
+        "https://www.googleapis.com/drive/v3/files/{}?fields=id,name,mimeType,size,createdTime",
+        file_id
+    );
+    let response: serde_json::Value = client.get(url).send().await?.json().await?;
+    Ok(response)
 }
