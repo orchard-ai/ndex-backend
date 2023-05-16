@@ -49,6 +49,7 @@ pub enum Product {
     Notion,
     GCalendar,
     GMail,
+    GDrive,
     Discord,
     Slack,
 }

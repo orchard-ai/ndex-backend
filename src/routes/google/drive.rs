@@ -1,7 +1,11 @@
-use crate::models::gdrive::{File, GDriveResponse};
+use crate::{
+    models::gdrive::{File, GDriveResponse},
+    routes::typesense::{Product, RowType, TypesenseInsert},
+};
 
 use axum::response::IntoResponse;
 use axum::Json;
+use chrono::DateTime;
 use http::{HeaderMap, HeaderValue, StatusCode};
 use reqwest::{Client, Error};
 use serde_json::{from_str, Value};
@@ -14,7 +18,7 @@ pub async fn gdrive_request(headers: HeaderMap) -> Result<impl IntoResponse, Str
     let bearer = format!("Bearer {}", access_token);
     h.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     let client = Client::builder().default_headers(h).build().unwrap();
-    let response: Vec<Value> = retrieve_file_list(&client)
+    let response: Vec<File> = retrieve_file_list(&client)
         .await
         .map_err(|e| e.to_string())?;
     Ok((StatusCode::OK, Json(response)))
@@ -62,19 +66,21 @@ pub async fn gdrive_request(headers: HeaderMap) -> Result<impl IntoResponse, Str
 //     Ok("Indexed".to_string())
 // }
 
-async fn retrieve_file_list(client: &Client) -> Result<Vec<Value>, Error> {
+async fn retrieve_file_list(client: &Client) -> Result<Vec<File>, Error> {
     info!("Retrieving messages list");
     let mut cursor: Option<String> = None;
-    let mut file_list: Vec<Value> = vec![];
+    let mut file_list: Vec<File> = vec![];
     loop {
         let url: String;
+        let params =
+            "fields=kind,incompleteSearch,nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,webViewLink,owners)";
         if let Some(page_id) = cursor {
             url = format!(
-                "https://www.googleapis.com/drive/v3/files?pageToken={}&fields=kind,incompleteSearch,nextPageToken,files(id,name,mimeType,size,createdTime)",
-                page_id
+                "https://www.googleapis.com/drive/v3/files?{}&pageToken={}",
+                params, page_id,
             )
         } else {
-            url = "https://www.googleapis.com/drive/v3/files?fields=kind,incompleteSearch,nextPageToken,files(id,name,mimeType,size,createdTime)".to_string();
+            url = format!("https://www.googleapis.com/drive/v3/files?{}", params)
         }
         dbg!(&url);
         let text = client.get(&url).send().await?.text().await?;
@@ -83,6 +89,7 @@ async fn retrieve_file_list(client: &Client) -> Result<Vec<Value>, Error> {
 
         match response {
             Ok(parsed) => {
+                dbg!(parse_file(parsed.files[0].clone()));
                 file_list.extend(parsed.files);
                 if file_list.len() > 500 {
                     break;
@@ -102,17 +109,40 @@ async fn retrieve_file_list(client: &Client) -> Result<Vec<Value>, Error> {
         }
     }
     info!("Finished retrieving messages list");
-    // let file = &file_list.last().unwrap().id;
-    // let file_object = get_file_object(file, client).await?;
-    // dbg!(file_object);
     Ok(file_list)
 }
 
-async fn get_file_object(file_id: &str, client: &Client) -> Result<serde_json::Value, Error> {
-    let url = format!(
-        "https://www.googleapis.com/drive/v3/files/{}?fields=id,name,mimeType,size,createdTime",
-        file_id
+fn parse_file(file: File) -> TypesenseInsert {
+    let email = "placeholder".to_string();
+    let id = file.id;
+    let contents = file.mime_type;
+    let title = file.name;
+    let url = file.web_view_link;
+    let added_by = Some(
+        file.owners
+            .iter()
+            .map(|owner| owner.email_address.to_owned())
+            .collect::<Vec<String>>()
+            .join(", "),
     );
-    let response: serde_json::Value = client.get(url).send().await?.json().await?;
-    Ok(response)
+    let platform = Product::GDrive;
+    let type_field = RowType::File;
+    let last_edited_time = DateTime::parse_from_rfc3339(&file.modified_time)
+        .unwrap()
+        .timestamp();
+    let created_time = DateTime::parse_from_rfc3339(&file.created_time)
+        .unwrap()
+        .timestamp();
+    TypesenseInsert {
+        account_email: email,
+        id,
+        title,
+        contents,
+        url,
+        added_by,
+        platform,
+        type_field,
+        last_edited_time,
+        created_time,
+    }
 }
