@@ -20,3 +20,9 @@ pub struct CsrfTokenWrapper(pub CsrfToken);
 
 #[derive(Clone)]
 pub struct GoogleAccessCodeWrapper(pub AccessToken);
+
+#[derive(Clone)]
+pub struct GoogleClientId(pub String);
+
+#[derive(Clone)]
+pub struct GoogleClientSecret(pub String);

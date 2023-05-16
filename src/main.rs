@@ -5,7 +5,7 @@ use dotenv::dotenv;
 use ndex::{
     app_state::AppState,
     run,
-    utilities::token_wrapper::{NotionAccessSecret, NotionClientId, TypesenseSecret},
+    utilities::token_wrapper::{NotionAccessSecret, NotionClientId, TypesenseSecret, GoogleClientId, GoogleClientSecret},
 };
 use sqlx::postgres::PgPoolOptions;
 
@@ -22,6 +22,8 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("could not connect to database_url")?;
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT Secret not set.");
+    let google_client_id = std::env::var("GOOGLE_CLIENT_ID").expect("Google client ID not set.");
+    let google_client_secret = std::env::var("GOOGLE_CLIENT_SECRET").expect("Google client secret not set.");
     let app_state = AppState::new(
         TypesenseSecret(typesense_secret),
         NotionClientId(notion_client_id),
@@ -32,6 +34,8 @@ async fn main() -> anyhow::Result<()> {
         Arc::new(Mutex::new(None)),
         Arc::new(Mutex::new(None)),
         Arc::new(Mutex::new(None)),
+        GoogleClientId(google_client_id),
+        GoogleClientSecret(google_client_secret),
     );
 
     run(app_state).await?;

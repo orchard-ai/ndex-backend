@@ -1,7 +1,12 @@
 use crate::{
     app_state::AppState,
     routes::{
-        google::{calendar::index_gcal_handler, drive::gdrive_request, mail::index_gmail_handler},
+        google::{
+            auth::obtain_google_access_token,
+            calendar::index_gcal_handler,
+            drive::gdrive_request,
+            mail::index_gmail_handler
+        },
         login::google_auth::{google_auth, google_auth_sucess},
         notion::{auth::obtain_access_token, search::index_notion_handler},
         typesense::{
@@ -46,6 +51,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/google/index_calendar", post(index_gcal_handler))
         .route("/google/index_gmail", post(index_gmail_handler))
         .route("/google/drive", get(gdrive_request))
+        .route("/google/obtain_access_token", post(obtain_google_access_token))
         .route("/notion/obtain_access_token", post(obtain_access_token))
         .route("/notion/index", post(index_notion_handler))
         .route("/typesense/delete_typesense_schema", get(delete_schema))
