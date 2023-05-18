@@ -6,16 +6,6 @@ pub mod drive;
 pub mod mail;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct IndexGMailRequest {
-    email: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct IndexGCalRequest {
-    email: String,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct IndexGDriveRequest {
+pub struct IndexGoogleRequest {
     email: String,
 }

@@ -22,14 +22,14 @@ use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
 use tracing::info;
 
-use super::IndexGDriveRequest;
+use super::IndexGoogleRequest;
 
 pub async fn index_gdrive_handler(
     State(jwt_secret): State<String>,
     State(pool): State<Pool<Postgres>>,
     State(typesense_secret): State<TypesenseSecret>,
     headers: HeaderMap,
-    Json(payload): Json<IndexGDriveRequest>,
+    Json(payload): Json<IndexGoogleRequest>,
 ) -> impl IntoResponse {
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
