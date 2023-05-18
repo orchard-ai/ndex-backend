@@ -4,7 +4,7 @@ use serde_derive::Serialize;
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GDriveResponse {
-    pub files: Vec<File>,
+    pub files: Vec<GFile>,
     pub incomplete_search: bool,
     pub kind: String,
     pub next_page_token: Option<String>,
@@ -12,7 +12,7 @@ pub struct GDriveResponse {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct File {
+pub struct GFile {
     pub created_time: String,
     pub id: String,
     pub mime_type: String,
