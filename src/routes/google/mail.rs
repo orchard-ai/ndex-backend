@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 
-use super::IndexGMailRequest;
+use super::IndexGoogleRequest;
 use crate::models::gmail::MessagesList;
 use crate::models::gmail::{Message, ParsedMail};
 use crate::models::integration::Platform;
@@ -26,7 +26,7 @@ pub async fn index_gmail_handler(
     State(pool): State<Pool<Postgres>>,
     State(typesense_secret): State<TypesenseSecret>,
     headers: HeaderMap,
-    Json(payload): Json<IndexGMailRequest>,
+    Json(payload): Json<IndexGoogleRequest>,
 ) -> impl IntoResponse {
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");

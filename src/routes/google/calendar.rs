@@ -19,14 +19,14 @@ use serde_json::json;
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
 
-use super::IndexGCalRequest;
+use super::IndexGoogleRequest;
 
 pub async fn index_gcal_handler(
     State(jwt_secret): State<String>,
     State(pool): State<Pool<Postgres>>,
     State(typesense_secret): State<TypesenseSecret>,
     headers: HeaderMap,
-    Json(payload): Json<IndexGCalRequest>,
+    Json(payload): Json<IndexGoogleRequest>,
 ) -> impl IntoResponse {
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
