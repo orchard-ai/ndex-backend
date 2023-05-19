@@ -23,6 +23,7 @@ pub async fn create_new_user(
     Json(form): Json<SignUpForm>,
 ) -> impl IntoResponse {
     form.validate()?;
+    dbg!(&form);
     let first_name = "".to_string();
     let last_name = "".to_string();
     let email = form.email;

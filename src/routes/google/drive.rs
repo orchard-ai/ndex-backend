@@ -17,10 +17,9 @@ use axum::{extract::State, response::IntoResponse};
 use chrono::DateTime;
 use http::{HeaderMap, HeaderValue, StatusCode};
 use reqwest::{Client, Error};
-use serde_json::{from_str, json, Value};
+use serde_json::json;
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
-use tracing::info;
 
 use super::IndexGoogleRequest;
 
