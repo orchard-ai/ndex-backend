@@ -63,56 +63,44 @@ async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String,
     let bearer = format!("Bearer {}", access_token);
     headers.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     let client = Client::builder().default_headers(headers).build().unwrap();
-    let response: Vec<GFile> = retrieve_file_list(&client)
-        .await
-        .map_err(|e| e.to_string())?;
-    let mut parsed_files: Vec<TypesenseInsert> = vec![];
-    for file in response {
-        parsed_files.push(parse_file(file, email));
+
+    let mut page_cursor = None;
+    loop {
+        let response: GDriveResponse = retrieve_file_list(&client, page_cursor)
+            .await
+            .map_err(|e| e.to_string())?;
+        let mut parsed_files = vec![];
+        for file in response.files {
+            parsed_files.push(parse_file(file, email));
+        }
+        append_json_lines(&filepath, &parsed_files).map_err(|e| e.to_string())?;
+        if let Some(next_page) = response.next_page_token {
+            page_cursor = Some(next_page);
+        } else {
+            break;
+        }
     }
-    append_json_lines(&filepath, &parsed_files).map_err(|e| e.to_string())?;
     Ok("Indexed".to_string())
 }
 
-async fn retrieve_file_list(client: &Client) -> Result<Vec<GFile>, Error> {
-    info!("Retrieving messages list");
-    let mut cursor: Option<String> = None;
-    let mut file_list: Vec<GFile> = vec![];
-    loop {
-        let url: String;
-        let params =
+async fn retrieve_file_list(
+    client: &Client,
+    page_cursor: Option<String>,
+) -> Result<GDriveResponse, Error> {
+    let url: String;
+    let params =
             "fields=kind,incompleteSearch,nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,webViewLink,owners)";
-        if let Some(page_id) = cursor {
-            url = format!(
-                "https://www.googleapis.com/drive/v3/files?{}&pageToken={}",
-                params, page_id,
-            )
-        } else {
-            url = format!("https://www.googleapis.com/drive/v3/files?{}", params)
-        }
-        dbg!(&url);
-        let text = client.get(&url).send().await?.text().await?;
-
-        let response: Result<GDriveResponse, serde_json::Error> = from_str(&text);
-
-        match response {
-            Ok(parsed) => {
-                file_list.extend(parsed.files);
-                if let Some(next_page) = parsed.next_page_token {
-                    cursor = Some(next_page);
-                } else {
-                    break;
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to parse response: {:?}", e);
-                eprintln!("Raw response: {}", from_str::<Value>(&text).unwrap());
-                break;
-            }
-        }
+    if let Some(page_id) = page_cursor {
+        url = format!(
+            "https://www.googleapis.com/drive/v3/files?{}&pageToken={}",
+            params, page_id,
+        )
+    } else {
+        url = format!("https://www.googleapis.com/drive/v3/files?{}", params)
     }
-    info!("Finished retrieving messages list");
-    Ok(file_list)
+    dbg!(&url);
+    let response: GDriveResponse = client.get(&url).send().await?.json().await?;
+    Ok(response)
 }
 
 fn parse_file(file: GFile, email: &str) -> TypesenseInsert {
