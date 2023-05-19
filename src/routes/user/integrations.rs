@@ -20,7 +20,7 @@ pub async fn get_integrations(
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let id = claims.sub.parse::<i64>().unwrap();
         dbg!(&id);
-        let q = r#"SELECT email, oauth_provider_id, scopes, platform as platform FROM userdb.integrations 
+        let q = r#"SELECT email, oauth_provider_id, scopes, platform FROM userdb.integrations 
             WHERE user_id = $1"#;
         let results = sqlx::query_as::<_, IntegrationResponse>(q)
             .bind(id)
@@ -53,9 +53,9 @@ pub async fn add_integration(
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (user_id, email, platform)
             DO UPDATE SET oauth_provider_id = EXCLUDED.oauth_provider_id, access_token = EXCLUDED.access_token, extra = EXCLUDED.extra, scopes = EXCLUDED.scopes
-            RETURNING email, oauth_provider_id, scopes, platform as "platform: Platform"
+            RETURNING email, oauth_provider_id, scopes, platform
         "#;
-        let row = sqlx::query_as::<_, IntegrationResponse>(q)
+        let row: IntegrationResponse = sqlx::query_as::<_, IntegrationResponse>(q)
             .bind(user_id)
             .bind(email)
             .bind(oauth_provider_id)
@@ -65,15 +65,7 @@ pub async fn add_integration(
             .bind(scopes)
             .fetch_one(&pool)
             .await?;
-
-        // Send back only required fields
-        let updated_row = IntegrationResponse {
-            email: row.email,
-            oauth_provider_id: row.oauth_provider_id,
-            scopes: row.scopes,
-            platform: row.platform,
-        };
-        return Ok((StatusCode::OK, Json(json!({ "integrations": updated_row }))));
+        return Ok((StatusCode::OK, Json(json!({ "integrations": row }))));
     }
     Err(UserError::Unauthorized("Invalid token".to_string()))
 }
