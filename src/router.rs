@@ -48,7 +48,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/google/auth/response", get(google_auth_sucess))
         .route("/google/index_calendar", post(index_gcal_handler))
         .route("/google/index_gmail", post(index_gmail_handler))
-        .route("/google/drive", get(index_gdrive_handler))
+        .route("/google/index_drive", get(index_gdrive_handler))
         .route(
             "/google/obtain_access_token",
             post(obtain_google_access_token),
