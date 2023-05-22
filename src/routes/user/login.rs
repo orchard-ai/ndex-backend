@@ -19,7 +19,7 @@ pub async fn login(
     State(pool): State<Pool<Postgres>>,
     State(jwt_secret): State<String>,
     State(typesense_secret): State<TypesenseSecret>,
-    Json(payload): Json<LoginRequest>,
+    Json(payload): Json<LoginRequest>
 ) -> impl IntoResponse {
     match payload.validate() {
         Ok(_) => (),

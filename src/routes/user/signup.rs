@@ -1,7 +1,9 @@
 use crate::{
     models::user::{AccountType, User},
     routes::typesense::schema_control::{create_document_schema, update_api_key},
-    utilities::{errors::UserError, token_wrapper::TypesenseSecret},
+    utilities::{errors::UserError},
+    utilities::token_wrapper::{TypesenseSecret, NoReplyEmailId, NoReplySecret, NoReplyServer},
+    utilities::email::{send_signup_confirmation},
 };
 use axum::{
     extract::{Json, Path, State},
@@ -20,6 +22,9 @@ pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
     State(jwt_secret): State<String>,
     State(typesense_secret): State<TypesenseSecret>,
+    State(no_reply_email_id): State<NoReplyEmailId>,
+    State(no_reply_secret):  State<NoReplySecret>,
+    State(no_reply_server):  State<NoReplyServer>,
     Json(form): Json<SignUpForm>,
 ) -> impl IntoResponse {
     form.validate()?;
@@ -89,6 +94,11 @@ pub async fn create_new_user(
         user_id: id.to_string(),
         token,
     };
+
+    //TODO: CONFIRMATION LINK FOR SIGNUP NEEDS TO BE DONE
+    let confirmation_link: String = String::from("TEST");
+    send_signup_confirmation(&email, &confirmation_link, &no_reply_email_id.0, &no_reply_secret.0, &no_reply_server.0);
+
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }
 

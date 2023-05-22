@@ -26,3 +26,12 @@ pub struct GoogleClientId(pub String);
 
 #[derive(Clone)]
 pub struct GoogleClientSecret(pub String);
+
+#[derive(Clone)]
+pub struct NoReplyEmailId(pub String);
+
+#[derive(Clone)]
+pub struct NoReplySecret(pub String);
+
+#[derive(Clone)]
+pub struct NoReplyServer(pub String);

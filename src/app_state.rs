@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::utilities::token_wrapper::{
     CsrfTokenWrapper, GoogleAccessCodeWrapper, NotionAccessSecret, NotionClientId,
-    PkceCodeVerifierWrapper, TypesenseSecret, GoogleClientId, GoogleClientSecret,
+    PkceCodeVerifierWrapper, TypesenseSecret, GoogleClientId, GoogleClientSecret, NoReplySecret, NoReplyEmailId, NoReplyServer
 };
 use axum::extract::FromRef;
 use oauth2::basic::BasicClient;
@@ -22,6 +22,9 @@ pub struct AppState {
     google_access_code_wrapper: Arc<Mutex<Option<GoogleAccessCodeWrapper>>>,
     pub google_client_id: GoogleClientId,
     pub google_client_secret: GoogleClientSecret,
+    pub no_reply_email_id: NoReplyEmailId,
+    pub no_reply_secret: NoReplySecret,
+    pub no_reply_server: NoReplyServer,
 }
 
 impl AppState {
@@ -37,6 +40,9 @@ impl AppState {
         google_access_code_wrapper: Arc<Mutex<Option<GoogleAccessCodeWrapper>>>,
         google_client_id: GoogleClientId,
         google_client_secret: GoogleClientSecret,
+        no_reply_email_id: NoReplyEmailId,
+        no_reply_secret: NoReplySecret,
+        no_reply_server: NoReplyServer,
     ) -> Self {
         Self {
             typesense_secret,
@@ -50,6 +56,9 @@ impl AppState {
             google_access_code_wrapper,
             google_client_id,
             google_client_secret,
+            no_reply_email_id,
+            no_reply_secret,
+            no_reply_server
         }
     }
 
