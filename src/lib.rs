@@ -17,7 +17,7 @@ pub async fn run(app_state: AppState) -> anyhow::Result<()> {
     let address = SocketAddr::from(([0, 0, 0, 0], 3001));
 
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::DEBUG)
+        .with_max_level(Level::INFO)
         .finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");

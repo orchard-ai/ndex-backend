@@ -18,6 +18,7 @@ use reqwest::{Client, Error};
 use serde_json::json;
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
+use tracing::info;
 
 use super::IndexGoogleRequest;
 
@@ -28,6 +29,7 @@ pub async fn index_gcal_handler(
     headers: HeaderMap,
     Json(payload): Json<IndexGoogleRequest>,
 ) -> impl IntoResponse {
+    info!("Indexing Google Calendar");
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
@@ -45,6 +47,7 @@ pub async fn index_gcal_handler(
                 ))
             }
             Err(e) => {
+                dbg!(&e);
                 return Err(UserError::InternalServerError(e.to_string()));
             }
         }

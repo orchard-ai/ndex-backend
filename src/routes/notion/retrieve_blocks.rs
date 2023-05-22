@@ -2,6 +2,7 @@ use crate::routes::typesense::{Product, RowType, TypesenseInsert};
 use chrono::DateTime;
 use reqwest::Client;
 use serde_json::Value;
+use tracing::error;
 
 use super::block_models::{BlockObject, BlockResponse};
 
@@ -34,15 +35,14 @@ async fn get_blocks(client: &Client, page_id: &str, cursor: Option<String>) -> B
     );
     let request = client.get(req_url);
 
-    let response = request
-        .send()
-        .await
-        .unwrap()
-        .json::<BlockResponse>()
-        .await
-        .unwrap();
-
-    response
+    let response = request.send().await.unwrap().text().await.unwrap();
+    match serde_json::from_str(&response) {
+        Ok(parsed_response) => return parsed_response,
+        Err(e) => {
+            error!("Error parsing block: {} \n {}", e.to_string(), response);
+            panic!("Error parsing block: {}", e.to_string());
+        }
+    }
 }
 
 pub async fn parse_block(
