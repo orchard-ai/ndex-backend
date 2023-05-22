@@ -28,6 +28,7 @@ pub async fn index_gmail_handler(
     headers: HeaderMap,
     Json(payload): Json<IndexGoogleRequest>,
 ) -> impl IntoResponse {
+    info!("Indexing GMail");
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
@@ -45,6 +46,7 @@ pub async fn index_gmail_handler(
                 ))
             }
             Err(e) => {
+                dbg!(&e);
                 return Err(UserError::InternalServerError(e.to_string()));
             }
         }

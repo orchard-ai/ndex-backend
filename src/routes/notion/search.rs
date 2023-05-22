@@ -20,6 +20,7 @@ use reqwest::Client;
 use serde_json::{json, Value};
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
+use tracing::{error, info};
 
 use super::{IndexNotionRequest, SearchResponse};
 
@@ -30,6 +31,7 @@ pub async fn index_notion_handler(
     headers: HeaderMap,
     Json(payload): Json<IndexNotionRequest>,
 ) -> impl IntoResponse {
+    info!("Indexing Notion!");
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
@@ -41,10 +43,11 @@ pub async fn index_notion_handler(
             .map_err(|e| UserError::InternalServerError(e.to_string()))?;
         match batch_index(&typesense_secret.0, &user_id, Product::Notion).await {
             Ok(_) => {
+                info!("Indexing complete");
                 return Ok((
                     StatusCode::OK,
                     Json(json!({"message": "indexing complete".to_string()})),
-                ))
+                ));
             }
             Err(e) => {
                 return Err(UserError::InternalServerError(e.to_string()));
@@ -87,11 +90,8 @@ pub async fn index(access_token: &str, user_id: &str) -> Result<String, String> 
     for (parent_id, parent) in &pages {
         let page_blocks = get_page_blocks(&client, &parent_id).await;
         let mut block_objects: Vec<TypesenseInsert> = vec![];
+        info!("Parsing blocks for page {}", parent_id);
         for block in page_blocks {
-            dbg!(format!(
-                "at page {}, fetching block {}",
-                &parent.title, &block.id
-            ));
             let parsed_block = parse_block(block, &parent.title, &parent.url).await;
             if let Some((block_id, parsed_block)) = parsed_block {
                 if !seen_ids.contains(&block_id) {
@@ -121,15 +121,14 @@ async fn get_pages(client: &Client, cursor: Option<String>) -> SearchResponse {
         .post("https://api.notion.com/v1/search")
         .json(&search_query);
 
-    let response = request
-        .send()
-        .await
-        .unwrap()
-        .json::<SearchResponse>()
-        .await
-        .unwrap();
-
-    response
+    let response = request.send().await.unwrap().text().await.unwrap();
+    match serde_json::from_str(&response) {
+        Ok(parsed_response) => return parsed_response,
+        Err(e) => {
+            error!("Error parsing response: {} \n {}", e.to_string(), response);
+            panic!("Error parsing response: {}", e.to_string());
+        }
+    }
 }
 
 fn parse_pages(response: SearchResponse) -> Vec<TypesenseInsert> {

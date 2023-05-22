@@ -26,6 +26,7 @@ pub async fn get_integrations(
             .bind(id)
             .fetch_all(&pool)
             .await?;
+        dbg!(&results);
         return Ok((StatusCode::OK, Json(json!({ "integrations": results }))));
     }
     Err(UserError::Unauthorized("Invalid token".to_string()))
