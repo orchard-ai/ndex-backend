@@ -20,6 +20,7 @@ use reqwest::Client;
 use serde_json::{json, Value};
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
+use tokio::time::{sleep, Duration};
 use tracing::{error, info};
 
 use super::{IndexNotionRequest, SearchResponse};
@@ -73,7 +74,9 @@ pub async fn index(access_token: &str, user_id: &str) -> Result<String, String> 
     let mut cursor: Option<String> = None;
     let mut pages: HashMap<String, TypesenseInsert> = HashMap::new();
     loop {
-        let query_page: SearchResponse = get_pages(&client, cursor).await;
+        let query_page: SearchResponse = get_pages(&client, cursor)
+            .await
+            .map_err(|e| e.to_string())?;
         let next_cursor: Value = query_page.next_cursor.clone();
         let parsed_response: Vec<TypesenseInsert> = parse_pages(query_page);
         for res in parsed_response {
@@ -92,7 +95,7 @@ pub async fn index(access_token: &str, user_id: &str) -> Result<String, String> 
         let mut block_objects: Vec<TypesenseInsert> = vec![];
         info!("Parsing blocks for page {}", parent_id);
         for block in page_blocks {
-            let parsed_block = parse_block(block, &parent.title, &parent.url).await;
+            let parsed_block = parse_block(block, &parent.title, &parent.url);
             if let Some((block_id, parsed_block)) = parsed_block {
                 if !seen_ids.contains(&block_id) {
                     block_objects.push(parsed_block);
@@ -104,8 +107,12 @@ pub async fn index(access_token: &str, user_id: &str) -> Result<String, String> 
     Ok("Indexed successfully".to_string())
 }
 
-async fn get_pages(client: &Client, cursor: Option<String>) -> SearchResponse {
-    let search_query = match cursor {
+#[async_recursion::async_recursion]
+async fn get_pages(
+    client: &Client,
+    cursor: Option<String>,
+) -> Result<SearchResponse, Box<dyn std::error::Error + Send + Sync>> {
+    let search_query = match &cursor {
         Some(uuid) => json!({
             "query": "",
             "start_cursor": uuid
@@ -121,13 +128,29 @@ async fn get_pages(client: &Client, cursor: Option<String>) -> SearchResponse {
         .post("https://api.notion.com/v1/search")
         .json(&search_query);
 
-    let response = request.send().await.unwrap().text().await.unwrap();
-    match serde_json::from_str(&response) {
-        Ok(parsed_response) => return parsed_response,
-        Err(e) => {
-            error!("Error parsing response: {} \n {}", e.to_string(), response);
-            panic!("Error parsing response: {}", e.to_string());
+    let response = request.send().await?;
+
+    match response.status() {
+        reqwest::StatusCode::OK => {
+            let parsed_response: SearchResponse = response.json().await?;
+            Ok(parsed_response)
         }
+        reqwest::StatusCode::TOO_MANY_REQUESTS => {
+            let headers = response.headers();
+            if let Some(retry_after) = headers.get("Retry-After") {
+                let wait_time = retry_after.to_str()?.parse::<u64>()?;
+                println!(
+                    "We're being rate-limited. Retry after: {} seconds",
+                    wait_time
+                );
+                sleep(Duration::from_secs(wait_time)).await;
+                return get_pages(client, cursor).await;
+            } else {
+                error!("We're being rate-limited, but no Retry-After header was present.");
+            }
+            Err("Rate-limited".into())
+        }
+        _ => Err("Unexpected HTTP status code".into()),
     }
 }
 

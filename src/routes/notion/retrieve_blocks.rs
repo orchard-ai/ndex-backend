@@ -45,7 +45,7 @@ async fn get_blocks(client: &Client, page_id: &str, cursor: Option<String>) -> B
     }
 }
 
-pub async fn parse_block(
+pub fn parse_block(
     response: BlockObject,
     parent_name: &str,
     parent_url: &str,

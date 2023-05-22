@@ -3,6 +3,7 @@ use axum::{extract::State, response::IntoResponse, Json};
 use http::StatusCode;
 use reqwest::{Client, Response};
 use tokio::fs;
+use tracing::info;
 
 use super::{Product, TypesenseInsert};
 
@@ -11,6 +12,8 @@ pub async fn batch_index(
     user_id: &str,
     platform: Product,
 ) -> Result<String, String> {
+    info!("Sending request to Typesense to index {:?} data", platform);
+
     let url = format!(
         "http://localhost:8108/collections/{}/documents/import?action=create",
         user_id
@@ -36,6 +39,7 @@ pub async fn batch_index(
     let request = client.body(file);
     response = request.send().await.map_err(|e| e.to_string())?;
     if response.status() == StatusCode::OK {
+        info!("Data successfully indexed into Typesense");
         return Ok("Success".to_string());
     }
     return Err("Error".to_string());
