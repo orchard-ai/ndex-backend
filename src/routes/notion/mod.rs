@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod block_models;
+pub mod index;
 pub mod retrieve_blocks;
 pub mod search;
 

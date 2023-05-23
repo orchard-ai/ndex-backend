@@ -6,7 +6,7 @@ use crate::{
             drive::index_gdrive_handler, mail::index_gmail_handler,
         },
         login::google_auth::{google_auth, google_auth_sucess},
-        notion::{auth::obtain_access_token, search::index_notion_handler},
+        notion::{auth::obtain_access_token, index::index_notion_handler},
         typesense::{
             index::single_index,
             schema_control::{delete_schema, retrieve_all_schema},
