@@ -100,6 +100,7 @@ async fn retrieve_message_ids(client: &Client) -> Result<Vec<Message>, Error> {
         }
         let response = client.get(next_url).send().await?;
         let messages_list: MessagesList = response.json().await?;
+        info!("Retrieved {} messages", messages_list.messages.len());
         message_list.extend(messages_list.messages);
         if let Some(next_page_cursor) = messages_list.next_page_token {
             cursor = Some(next_page_cursor);
