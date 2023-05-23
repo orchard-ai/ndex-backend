@@ -1,11 +1,12 @@
+extern crate lettre;
 
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials; 
-use lettre::{Message, SmtpTransport, Transport}; 
+use lettre::{Message, SmtpTransport, Transport};
 
-pub fn send_signup_confirmation(receiver: String, confirmation_link: String, credential_username: String, credentials_password: String) {
+pub fn send_signup_confirmation(receiver: &str, confirmation_link: &str, credential_username: &str, credentials_password: &str, credentials_server: &str) {
   let email = Message::builder() 
-    .from(("Ndex <noreply@ndex.gg>").parse().unwrap()) 
+    .from(credential_username.parse().unwrap()) 
     .to(receiver.parse().unwrap()) 
     .header(ContentType::TEXT_HTML)
     .subject("Email confirmation - Ndex") 
@@ -20,13 +21,13 @@ pub fn send_signup_confirmation(receiver: String, confirmation_link: String, cre
     .unwrap(); 
 
   // Create confirmation
-  let creds = Credentials::new(credential_username, credentials_password); 
-  
+  let creds = Credentials::new(credential_username.to_string(), credentials_password.to_string()); 
+
   // Open a remote connection to gmail 
-  let mailer = SmtpTransport::relay("smtp.gmail.com") 
-    .unwrap() 
-    .credentials(creds) 
-    .build(); 
+  let mailer = SmtpTransport::relay(credentials_server)
+  .unwrap()
+  .credentials(creds)
+  .build();
   
   // Send the email 
   match mailer.send(&email) { 
