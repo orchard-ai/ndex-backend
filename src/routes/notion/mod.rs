@@ -31,6 +31,12 @@ pub struct IndexNotionRequest {
     pub email: String,
 }
 
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SingleSearchNotionRequest {
+    pub email: String,
+    pub query: String,
+}
+
 /* ------------------- SEARCH QUERY --------------------------- */
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

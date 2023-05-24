@@ -6,7 +6,10 @@ use crate::{
             drive::index_gdrive_handler, mail::index_gmail_handler,
         },
         login::google_auth::{google_auth, google_auth_sucess},
-        notion::{auth::obtain_access_token, index::index_notion_handler},
+        notion::{
+            auth::obtain_access_token, index::index_notion_handler,
+            search::single_notion_search_handler,
+        },
         typesense::{
             index::single_index,
             schema_control::{delete_schema, retrieve_all_schema},
@@ -55,6 +58,7 @@ pub fn create_router(app_state: AppState) -> Router {
         )
         .route("/notion/obtain_access_token", post(obtain_access_token))
         .route("/notion/index", post(index_notion_handler))
+        .route("/notion/single_search", post(single_notion_search_handler))
         .route("/typesense/delete_typesense_schema", get(delete_schema))
         .route(
             "/typesense/retrieve_typesense_schema",
