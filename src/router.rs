@@ -7,8 +7,8 @@ use crate::{
         },
         login::google_auth::{google_auth, google_auth_sucess},
         notion::{
-            auth::obtain_access_token, index::index_notion_handler,
-            search::single_notion_search_handler,
+            auth::obtain_access_token,
+            index::{index_notion_handler, single_notion_search_handler},
         },
         typesense::{
             index::single_index,
