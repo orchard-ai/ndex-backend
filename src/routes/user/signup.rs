@@ -173,3 +173,16 @@ pub async fn delete_user(
     sqlx::query(q).bind(id).execute(&pool).await?;
     Ok(())
 }
+
+pub async fn confirm_hash(
+    Path(hash): Path<i64>,
+    State(pool): State<Pool<Postgres>>,
+) -> Result<(), ConfirmationError> {
+    let sql = "SELECT user_id FROM userdb.confirmation_hash WHERE hash_key=$1".to_string();
+    let user_id = sqlx::query(&sql).bind(hash).fetch_one(&pool).await.map_err(
+        // Assume any error means invalid hash for now
+        |_| ConfirmationError::ConfirmationHashInvalid
+    )?;
+
+    Ok(Json("success": user_id))
+}
