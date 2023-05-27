@@ -108,6 +108,7 @@ pub async fn create_new_user(
 }
 
 fn generate_confirmation_link() -> String {
+    // TODO: add BASE_URL ENV variable with domain
     let base_url = "/user/email_verification/";
     let hash = generate_hash();
 
@@ -203,17 +204,30 @@ pub async fn confirm_hash(
     Path(hash): Path<i64>,
     State(pool): State<Pool<Postgres>>,
 ) -> Result<(), ConfirmationError> {
-    let sql = "SELECT user_id FROM userdb.confirmation_hash WHERE hash_key=$1;".to_string();
-    sqlx::query(&sql).bind(hash).fetch_one(&pool).await.map_err(
-        // Assume any error means invalid hash for now
-        |_| ConfirmationError::ConfirmationHashInvalid
-    )?;
-    // delete the hash from db and set user to active
-    let sql = "DELETE FROM userdb.confirmation_hash WHERE hash_key=$1;".to_string();
-    sqlx::query(&sql).bind(hash).execute(&pool).await?;
-    // TODO: get user_id from above query to find user and set active to true below
-    let sql = "UPDATE userdb.users SET active = TRUE;".to_string();
-    sqlx::query(&sql).execute(&pool).await?;
+    // Retrieve user_id based on the hash_key
+    let sql = "SELECT user_id FROM userdb.confirmation_hash WHERE hash_key=$1".to_string();
+    let user_id: Option<i64> = sqlx::query_scalar(&sql)
+        .bind(hash)
+        .fetch_optional(&pool)
+        .await?;
+    
+    // Check if user_id was found for hash_key provided
+    if let Some(user_id) = user_id {
+        // Update the user's active field to TRUE based on the retrieved user_id and return
+        sqlx::query("UPDATE userdb.users SET active = TRUE WHERE id = $1")
+            .bind(user_id)
+            .execute(&pool)
+            .await?;
 
-    Ok(())
+        // Delete the hash_key from the confirmation_hash table
+        sqlx::query("DELETE FROM userdb.confirmation_hash WHERE user_id = $1")
+            .bind(user_id)
+            .execute(&pool)
+            .await?;
+        
+        Ok(())
+    } else {
+        // Handle case when no user_id is found for the provided hash_key
+        Err(ConfirmationError::ConfirmationHashInvalid)
+    }
 }
