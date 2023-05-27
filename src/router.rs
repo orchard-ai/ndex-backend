@@ -18,7 +18,7 @@ use crate::{
             integrations::{add_integration, get_api_key, get_integrations, remove_integration},
             login::login,
             migrate::migrate,
-            signup::{create_new_user, delete_user, get_users, update_user},
+            signup::{create_new_user, delete_user, get_users, update_user, confirm_hash},
         },
     },
 };
@@ -47,6 +47,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/remove_integration", post(remove_integration))
         .route("/user/get_all", get(get_users))
         .route("/user/get_typesense_key", get(get_api_key))
+        .route("/user/email_verification/:hash=", get(confirm_hash))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
         .route("/google/index_calendar", post(index_gcal_handler))

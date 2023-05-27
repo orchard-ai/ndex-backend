@@ -1,6 +1,10 @@
 use tracing::error;
 
-use axum::{http::StatusCode, response::IntoResponse, Json};
+use axum::{
+    http::StatusCode, 
+    response::{IntoResponse, Response}, 
+    Json
+};
 use serde_json::json;
 
 pub enum UserError {
@@ -10,8 +14,13 @@ pub enum UserError {
     Unauthorized(String),
 }
 
+pub enum ConfirmationError {
+    ConfirmationHashInvalid,
+    BadRequest(String),
+}
+
 impl IntoResponse for UserError {
-    fn into_response(self) -> axum::response::Response {
+    fn into_response(self) -> Response {
         let (status, error_message) = match self {
             Self::InternalServerError(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.as_str()),
             Self::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
@@ -32,5 +41,22 @@ impl From<sqlx::Error> for UserError {
 impl From<validator::ValidationErrors> for UserError {
     fn from(err: validator::ValidationErrors) -> Self {
         UserError::BadRequest(err.to_string())
+    }
+}
+
+impl From<sqlx::Error> for ConfirmationError {
+    fn from(err: sqlx::Error) -> Self {
+        error!("SQLx Error: {}", err);
+        ConfirmationError::BadRequest(err.to_string())
+    }
+}
+
+impl IntoResponse for ConfirmationError {
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            Self::ConfirmationHashInvalid => (StatusCode::INTERNAL_SERVER_ERROR, "hash invalid"),
+            Self::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
+        };
+        (status, Json(json!({ "error": error_message }))).into_response()
     }
 }
