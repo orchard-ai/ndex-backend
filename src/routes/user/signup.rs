@@ -1,7 +1,9 @@
 use crate::{
     models::user::{AccountType, User},
     routes::typesense::schema_control::{create_document_schema, update_api_key},
-    utilities::{errors::UserError},
+    utilities::{errors::{
+        UserError, ConfirmationError}
+    },
     utilities::token_wrapper::{TypesenseSecret, NoReplyEmailId, NoReplySecret, NoReplyServer},
     utilities::email::{send_signup_confirmation},
 };
@@ -15,6 +17,9 @@ use http::StatusCode;
 use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
 use validator::Validate;
+use sha2::{Digest, Sha256};
+use rand::Rng;
+use hex;
 
 use super::{generate_token, SignUpForm, TokenResponse, UpdateUser};
 
@@ -96,10 +101,30 @@ pub async fn create_new_user(
     };
 
     //TODO: CONFIRMATION LINK FOR SIGNUP NEEDS TO BE DONE
-    let confirmation_link: String = String::from("TEST");
+    let confirmation_link: String = generate_confirmation_link();
     send_signup_confirmation(&email, &confirmation_link, &no_reply_email_id.0, &no_reply_secret.0, &no_reply_server.0);
 
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
+}
+
+fn generate_confirmation_link() -> String {
+    let base_url = "/user/email_verification/";
+    let hash = generate_hash();
+
+    format!("{}{}", base_url, hash)
+}
+
+fn generate_hash() -> String {
+    let mut rng = rand::thread_rng();
+    let random_bytes: [u8; 32] = rng.gen();
+
+    let mut hasher = Sha256::new();
+    hasher.update(&random_bytes);
+
+    let hash_bytes = hasher.finalize();
+    let hash = hex::encode(hash_bytes);
+
+    hash
 }
 
 pub async fn update_user(
@@ -178,11 +203,17 @@ pub async fn confirm_hash(
     Path(hash): Path<i64>,
     State(pool): State<Pool<Postgres>>,
 ) -> Result<(), ConfirmationError> {
-    let sql = "SELECT user_id FROM userdb.confirmation_hash WHERE hash_key=$1".to_string();
-    let user_id = sqlx::query(&sql).bind(hash).fetch_one(&pool).await.map_err(
+    let sql = "SELECT user_id FROM userdb.confirmation_hash WHERE hash_key=$1;".to_string();
+    sqlx::query(&sql).bind(hash).fetch_one(&pool).await.map_err(
         // Assume any error means invalid hash for now
         |_| ConfirmationError::ConfirmationHashInvalid
     )?;
+    // delete the hash from db and set user to active
+    let sql = "DELETE FROM userdb.confirmation_hash WHERE hash_key=$1;".to_string();
+    sqlx::query(&sql).bind(hash).execute(&pool).await?;
+    // TODO: get user_id from above query to find user and set active to true below
+    let sql = "UPDATE userdb.users SET active = TRUE;".to_string();
+    sqlx::query(&sql).execute(&pool).await?;
 
-    Ok(Json("success": user_id))
+    Ok(())
 }

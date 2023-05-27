@@ -16,6 +16,7 @@ pub enum UserError {
 
 pub enum ConfirmationError {
     ConfirmationHashInvalid,
+    BadRequest(String),
 }
 
 impl IntoResponse for UserError {
@@ -43,10 +44,18 @@ impl From<validator::ValidationErrors> for UserError {
     }
 }
 
+impl From<sqlx::Error> for ConfirmationError {
+    fn from(err: sqlx::Error) -> Self {
+        error!("SQLx Error: {}", err);
+        ConfirmationError::BadRequest(err.to_string())
+    }
+}
+
 impl IntoResponse for ConfirmationError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             Self::ConfirmationHashInvalid => (StatusCode::INTERNAL_SERVER_ERROR, "hash invalid"),
+            Self::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
         };
         (status, Json(json!({ "error": error_message }))).into_response()
     }
