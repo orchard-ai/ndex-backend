@@ -100,19 +100,35 @@ pub async fn create_new_user(
         token,
     };
 
-    //TODO: CONFIRMATION LINK FOR SIGNUP NEEDS TO BE DONE
-    let confirmation_link: String = generate_confirmation_link();
+    let confirmation_link: String = match generate_confirmation_link(id, pool).await {
+        Ok(link) => link,
+        Err(err) => {
+            eprintln!("Error generating confirmation link: {}", err);
+            String::default()
+        }
+    };
     send_signup_confirmation(&email, &confirmation_link, &no_reply_email_id.0, &no_reply_secret.0, &no_reply_server.0);
 
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }
 
-fn generate_confirmation_link() -> String {
+async fn generate_confirmation_link(
+    user_id: i64,
+    pool: Pool<Postgres>,
+) -> Result<String, sqlx::Error> {
     // TODO: add BASE_URL ENV variable with domain
     let base_url = "/user/email_verification/";
     let hash = generate_hash();
 
-    format!("{}{}", base_url, hash)
+    // Insert the hash_key into the confirmation_hash table
+    sqlx::query("INSERT INTO userdb.confirmation_hash (hash_key, user_id) VALUES ($1, $2)")
+        .bind(user_id)
+        .bind(&hash)
+        .execute(&pool)
+        .await
+        .expect("Failed to insert hash_key into the database");
+
+    Ok(format!("{}{}", base_url, hash))
 }
 
 fn generate_hash() -> String {
@@ -201,13 +217,13 @@ pub async fn delete_user(
 }
 
 pub async fn confirm_hash(
-    Path(hash): Path<i64>,
+    Path(hash): Path<String>,
     State(pool): State<Pool<Postgres>>,
 ) -> Result<(), ConfirmationError> {
     // Retrieve user_id based on the hash_key
     let sql = "SELECT user_id FROM userdb.confirmation_hash WHERE hash_key=$1".to_string();
     let user_id: Option<i64> = sqlx::query_scalar(&sql)
-        .bind(hash)
+        .bind(&hash)
         .fetch_optional(&pool)
         .await?;
     
