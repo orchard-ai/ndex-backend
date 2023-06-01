@@ -1,5 +1,5 @@
 use crate::{
-    models::user::{self, AccountType, User},
+    models::user::{AccountType, User},
     routes::typesense::schema_control::{create_document_schema, update_api_key},
     utilities::email::send_signup_confirmation,
     utilities::errors::UserError,
