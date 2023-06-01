@@ -25,7 +25,7 @@ use crate::{
     },
 };
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use http::{header, HeaderValue};
@@ -43,7 +43,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/signup", post(create_new_user))
         .route("/user/login", post(login))
         .route("/user/update/:id=", post(update_user))
-        .route("/user/delete/:id=", get(delete_user))
+        .route("/user/delete", delete(delete_user))
         .route("/user/integrations", get(get_integrations))
         .route("/user/add_integration", post(add_integration))
         .route("/user/remove_integration", post(remove_integration))
