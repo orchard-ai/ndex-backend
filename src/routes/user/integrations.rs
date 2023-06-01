@@ -117,3 +117,22 @@ pub async fn get_api_key(
     }
     Err(UserError::Unauthorized("Invalid token".to_string()))
 }
+
+pub async fn get_email(
+    State(pool): State<Pool<Postgres>>,
+    State(jwt_secret): State<String>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let auth_header = headers.get("Authorization").unwrap();
+    let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
+    if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
+        let q = r#"SELECT email FROM userdb.users WHERE id = $1"#;
+        let id = claims.sub.parse::<i64>().unwrap();
+        let row = sqlx::query(q).bind(id).fetch_one(&pool).await?;
+        return Ok((
+            StatusCode::OK,
+            Json(json!({ "email": row.get::<String, usize>(0) })),
+        ));
+    }
+    Err(UserError::Unauthorized("Invalid token".to_string()))
+}
