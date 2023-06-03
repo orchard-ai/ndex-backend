@@ -41,7 +41,7 @@ impl FromStr for Platform {
             "google" => Ok(Platform::Google),
             "discord" => Ok(Platform::Discord),
             "slack" => Ok(Platform::Slack),
-            _ => Err(format!("Invalid integration platform: {}", s)),
+            _ => Err(format!("Invalid integration platform: {s}")),
         }
     }
 }

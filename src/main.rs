@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 use anyhow::Context;
 use dotenv::dotenv;
 use ndex::{
@@ -31,21 +29,17 @@ async fn main() -> anyhow::Result<()> {
         std::env::var("NO_REPLY_EMAIL_ID").expect("No reply email not set.");
     let no_reply_secret = std::env::var("NO_REPLY_SECRET").expect("No reply secret not set.");
     let no_reply_server = std::env::var("NO_REPLY_SERVER").expect("No reply server not set.");
-    let app_state = AppState::new(
-        TypesenseSecret(typesense_secret),
-        NotionClientId(notion_client_id),
+    let app_state = AppState {
+        typesense_secret: TypesenseSecret(typesense_secret),
+        notion_client_id: NotionClientId(notion_client_id),
         pool,
         jwt_secret,
-        Arc::new(Mutex::new(None)),
-        Arc::new(Mutex::new(None)),
-        Arc::new(Mutex::new(None)),
-        Arc::new(Mutex::new(None)),
-        GoogleClientId(google_client_id),
-        GoogleClientSecret(google_client_secret),
-        NoReplyEmailId(no_reply_email_id),
-        NoReplySecret(no_reply_secret),
-        NoReplyServer(no_reply_server),
-    );
+        google_client_id: GoogleClientId(google_client_id),
+        google_client_secret: GoogleClientSecret(google_client_secret),
+        no_reply_email_id: NoReplyEmailId(no_reply_email_id),
+        no_reply_secret: NoReplySecret(no_reply_secret),
+        no_reply_server: NoReplyServer(no_reply_server),
+    };
     run(app_state).await?;
     Ok(())
 }

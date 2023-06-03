@@ -113,15 +113,10 @@ pub async fn update_user(
     State(pool): State<Pool<Postgres>>,
     Json(payload): Json<UpdateUser>,
 ) -> Result<String, UserError> {
-    let account_type = match payload.account_type {
-        Some(acc_t) => Some(AccountType::from(acc_t)),
-        None => None,
-    };
-    let password_hash = if let Some(password) = payload.password {
-        Some(hash(password, DEFAULT_COST).unwrap())
-    } else {
-        None
-    };
+    let account_type = payload.account_type.map(AccountType::from);
+    let password_hash = payload
+        .password
+        .map(|password| hash(password, DEFAULT_COST).unwrap());
     dbg!(&account_type);
     let q = r#"--sql
         UPDATE userdb.users

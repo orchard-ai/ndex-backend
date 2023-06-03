@@ -19,7 +19,7 @@ pub async fn login(
     State(pool): State<Pool<Postgres>>,
     State(jwt_secret): State<String>,
     State(typesense_secret): State<TypesenseSecret>,
-    Json(payload): Json<LoginRequest>
+    Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
     match payload.validate() {
         Ok(_) => (),
@@ -46,11 +46,9 @@ pub async fn login(
                     update_api_key(typesense_secret.0.to_owned(), &pool, user.id).await?;
                     return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
                 }
-            } else if let Some(_) = payload.oauth_provider_id {
-                if let Some(_) = payload.oauth_access_token {
-                    update_api_key(typesense_secret.0.to_owned(), &pool, user.id).await?;
-                    return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
-                }
+            } else if payload.oauth_provider_id.is_some() && payload.oauth_access_token.is_some() {
+                update_api_key(typesense_secret.0.to_owned(), &pool, user.id).await?;
+                return Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()));
             }
             Err(UserError::Unauthorized(
                 "Invalid password or oauth access token".to_string(),

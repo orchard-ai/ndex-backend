@@ -41,7 +41,7 @@ pub async fn delete_schema(
 ) -> impl IntoResponse {
     let client = Client::new();
     let typesense_admin_key = typesense_secret.0.to_owned();
-    let collection = format!("http://localhost:8108/collections/{}", id.to_string());
+    let collection = format!("http://localhost:8108/collections/{id}");
     dbg!(&collection);
 
     let request = client
@@ -119,7 +119,7 @@ pub async fn update_api_key(
 }
 
 pub async fn delete_api_key(client: &Client, id: i64) {
-    let url = format!("http://localhost:8108/keys/{}", id.to_string());
+    let url = format!("http://localhost:8108/keys/{id}");
     let request = client.delete(url);
     match request
         .send()
@@ -129,7 +129,7 @@ pub async fn delete_api_key(client: &Client, id: i64) {
         .await
     {
         Ok(_) => (),
-        Err(e) => println!("Error deleting API key: {}", e),
+        Err(e) => println!("Error deleting API key: {e}"),
     }
 }
 pub async fn create_read_api_key(client: &Client, id: i64) -> Result<(i64, String), Error> {

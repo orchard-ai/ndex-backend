@@ -5,7 +5,6 @@ use crate::{
             auth::obtain_google_access_token, calendar::index_gcal_handler,
             drive::index_gdrive_handler, mail::index_gmail_handler,
         },
-        login::google_auth::{google_auth, google_auth_sucess},
         notion::{
             auth::obtain_access_token,
             index::{index_notion_handler, single_notion_search_handler},
@@ -50,8 +49,6 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/get_all", get(get_users))
         .route("/user/get_typesense_key", get(get_api_key))
         .route("/user/get_email", get(get_email))
-        .route("/google/auth", get(google_auth))
-        .route("/google/auth/response", get(google_auth_sucess))
         .route("/google/index_calendar", post(index_gcal_handler))
         .route("/google/index_gmail", post(index_gmail_handler))
         .route("/google/index_drive", post(index_gdrive_handler))
