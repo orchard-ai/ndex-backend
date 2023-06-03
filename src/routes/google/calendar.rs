@@ -38,7 +38,7 @@ pub async fn index_gcal_handler(
         let access_token = get_access_token(&pool, &user_id, &email, Platform::Google).await?;
         index(&access_token, &user_id, &email)
             .await
-            .map_err(|e| UserError::InternalServerError(e.to_string()))?;
+            .map_err(UserError::InternalServerError)?;
         match batch_index(&typesense_secret.0, &user_id, Product::GCalendar).await {
             Ok(_) => {
                 return Ok((
@@ -48,7 +48,7 @@ pub async fn index_gcal_handler(
             }
             Err(e) => {
                 dbg!(&e);
-                return Err(UserError::InternalServerError(e.to_string()));
+                return Err(UserError::InternalServerError(e));
             }
         }
     }
@@ -56,11 +56,11 @@ pub async fn index_gcal_handler(
 }
 
 async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String, String> {
-    let filepath = format!("google_calendar_events_{}.jsonl", user_id);
+    let filepath = format!("google_calendar_events_{user_id}.jsonl");
     File::create(&filepath).map_err(|e| e.to_string())?;
 
     let mut headers = HeaderMap::new();
-    let bearer = format!("Bearer {}", access_token);
+    let bearer = format!("Bearer {access_token}");
     headers.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     let client = Client::builder().default_headers(headers).build().unwrap();
     let calendars: GCalendarList = get_calendars(&client).await.map_err(|e| e.to_string())?;

@@ -48,7 +48,7 @@ impl FromStr for AccountType {
         match s.to_lowercase().as_str() {
             "credentials" => Ok(AccountType::Credentials),
             "google" => Ok(AccountType::Google),
-            _ => Err(format!("Invalid account type: {}", s)),
+            _ => Err(format!("Invalid account type: {s}")),
         }
     }
 }

@@ -13,11 +13,11 @@ pub fn send_signup_confirmation(receiver: &str, confirmation_link: &str, credent
     .body(format!("
             <div>
                 <p> Thank you for joining Ndex! Let's verify your email so we can finish creating your account. Your confirmation link is: </p>
-                <p> {link} </p>
+                <p> {confirmation_link} </p>
 
                 <div> This email was sent by Ndex</div>
             </div>
-    ", link =confirmation_link)) 
+    ")) 
     .unwrap(); 
 
   // Create confirmation
@@ -32,6 +32,6 @@ pub fn send_signup_confirmation(receiver: &str, confirmation_link: &str, credent
   // Send the email 
   match mailer.send(&email) { 
     Ok(_) => println!("Email sent successfully!"), 
-    Err(e) => panic!("Could not send email: {:?}", e), 
+    Err(e) => panic!("Could not send email: {e:?}"), 
   }
 }

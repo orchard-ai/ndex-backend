@@ -14,27 +14,17 @@ pub async fn batch_index(
 ) -> Result<String, String> {
     info!("Sending request to Typesense to index {:?} data", platform);
 
-    let url = format!(
-        "http://localhost:8108/collections/{}/documents/import?action=create",
-        user_id
-    );
+    let url = format!("http://localhost:8108/collections/{user_id}/documents/import?action=create");
     let client = Client::new()
         .post(url)
         .header("x-typesense-api-key", typesense_admin_key);
     let response: Response;
-    let filepath: String;
-    match platform {
-        Product::Notion => {
-            filepath = format!("notion_blocks_{}.jsonl", user_id);
-        }
-        Product::GCalendar => {
-            filepath = format!("google_calendar_events_{}.jsonl", user_id);
-        }
-        Product::GMail => {
-            filepath = format!("google_mail_{}.jsonl", user_id);
-        }
+    let filepath: String = match platform {
+        Product::Notion => format!("notion_blocks_{user_id}.jsonl"),
+        Product::GCalendar => format!("google_calendar_events_{user_id}.jsonl"),
+        Product::GMail => format!("google_mail_{user_id}.jsonl"),
         _ => return Err("Invalid platform".to_string()),
-    }
+    };
     let file = fs::read_to_string(filepath).await.unwrap();
     let request = client.body(file);
     response = request.send().await.map_err(|e| e.to_string())?;
@@ -42,7 +32,7 @@ pub async fn batch_index(
         info!("Data successfully indexed into Typesense");
         return Ok("Success".to_string());
     }
-    return Err("Error".to_string());
+    Err("Error".to_string())
 }
 
 pub async fn single_index(
@@ -59,8 +49,8 @@ pub async fn single_index(
     dbg!(&request);
     let response = request.send().await.unwrap();
     if response.status() == StatusCode::OK {
-        return (StatusCode::OK, "Success");
+        (StatusCode::OK, "Success")
     } else {
-        return (StatusCode::INTERNAL_SERVER_ERROR, "Error");
+        (StatusCode::INTERNAL_SERVER_ERROR, "Error")
     }
 }

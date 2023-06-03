@@ -10,12 +10,12 @@ pub async fn get_page_blocks(client: &Client, page_id: &str) -> Vec<BlockObject>
     let mut block_cursor = None;
     let mut results: Vec<BlockObject> = vec![];
     loop {
-        let response = get_blocks(&client, page_id, block_cursor).await;
+        let response = get_blocks(client, page_id, block_cursor).await;
         for res in response.results {
             results.push(res);
         }
         if response.next_cursor != Value::Null {
-            block_cursor = Some(response.next_cursor.to_string().replace("\"", ""));
+            block_cursor = Some(response.next_cursor.to_string().replace('\"', ""));
         } else {
             break;
         }
@@ -25,7 +25,7 @@ pub async fn get_page_blocks(client: &Client, page_id: &str) -> Vec<BlockObject>
 
 async fn get_blocks(client: &Client, page_id: &str, cursor: Option<String>) -> BlockResponse {
     let cursor_string = if let Some(cursor) = cursor {
-        format!("?start_cursor={}", cursor)
+        format!("?start_cursor={cursor}")
     } else {
         "".to_string()
     };
@@ -37,10 +37,10 @@ async fn get_blocks(client: &Client, page_id: &str, cursor: Option<String>) -> B
 
     let response = request.send().await.unwrap().text().await.unwrap();
     match serde_json::from_str(&response) {
-        Ok(parsed_response) => return parsed_response,
+        Ok(parsed_response) => parsed_response,
         Err(e) => {
             error!("Error parsing block: {} \n {}", e.to_string(), response);
-            panic!("Error parsing block: {}", e.to_string());
+            panic!("Error parsing block: {e}");
         }
     }
 }
@@ -51,7 +51,7 @@ pub fn parse_block(
     parent_url: &str,
 ) -> Option<(String, TypesenseInsert)> {
     let block_id = response.id;
-    let block_type = response.type_field.to_string().replace("\"", "");
+    let block_type = response.type_field.replace('\"', "");
     let contents = match block_type.as_str() {
         "paragraph" | "heading_1" | "heading_2" | "heading_3" | "callout" | "quote"
         | "bulleted_list_item" | "numbered_list_item" | "toggle" | "todo" | "code" => {
@@ -62,13 +62,13 @@ pub fn parse_block(
                 .and_then(|value| value.get(0))
                 .and_then(|value| value.get("plain_text"));
             match c {
-                Some(c) => c.to_string().replace("\"", ""),
+                Some(c) => c.to_string().replace('\"', ""),
                 None => "".to_string(),
             }
         }
         _ => "".to_string(),
     };
-    if contents == "" {
+    if contents.is_empty() {
         return None;
     }
     let created_time = DateTime::parse_from_rfc3339(&response.created_time)

@@ -32,7 +32,7 @@ pub async fn index_notion_handler(
         let access_token = get_access_token(&pool, &user_id, &email, Platform::Notion).await?;
         index(&access_token, &user_id, "")
             .await
-            .map_err(|e| UserError::InternalServerError(e.to_string()))?;
+            .map_err(UserError::InternalServerError)?;
         match batch_index(&typesense_secret.0, &user_id, Product::Notion).await {
             Ok(_) => {
                 info!("Indexing complete");
@@ -42,7 +42,7 @@ pub async fn index_notion_handler(
                 ));
             }
             Err(e) => {
-                return Err(UserError::InternalServerError(e.to_string()));
+                return Err(UserError::InternalServerError(e));
             }
         }
     }
@@ -65,7 +65,7 @@ pub async fn single_notion_search_handler(
         let access_token = get_access_token(&pool, &user_id, &email, Platform::Notion).await?;
         index(&access_token, &user_id, &payload.query)
             .await
-            .map_err(|e| UserError::InternalServerError(e.to_string()))?;
+            .map_err(UserError::InternalServerError)?;
         match batch_index(&typesense_secret.0, &user_id, Product::Notion).await {
             Ok(_) => {
                 info!("Indexing complete");
@@ -75,7 +75,7 @@ pub async fn single_notion_search_handler(
                 ));
             }
             Err(e) => {
-                return Err(UserError::InternalServerError(e.to_string()));
+                return Err(UserError::InternalServerError(e));
             }
         }
     }
