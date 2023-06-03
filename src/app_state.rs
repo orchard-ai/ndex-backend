@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use crate::utilities::token_wrapper::{
-    CsrfTokenWrapper, GoogleAccessCodeWrapper, NotionAccessSecret, NotionClientId,
-    PkceCodeVerifierWrapper, TypesenseSecret, GoogleClientId, GoogleClientSecret, NoReplySecret, NoReplyEmailId, NoReplyServer
+    CsrfTokenWrapper, GoogleAccessCodeWrapper, GoogleClientId, GoogleClientSecret, NoReplyEmailId,
+    NoReplySecret, NoReplyServer, NotionClientId, PkceCodeVerifierWrapper, TypesenseSecret,
 };
 use axum::extract::FromRef;
 use oauth2::basic::BasicClient;
@@ -12,7 +12,6 @@ use sqlx::{Pool, Postgres};
 #[derive(Clone, FromRef)]
 pub struct AppState {
     pub typesense_secret: TypesenseSecret,
-    pub notion_secret: NotionAccessSecret,
     pub notion_client_id: NotionClientId,
     pub pool: Pool<Postgres>,
     pub jwt_secret: String,
@@ -31,7 +30,6 @@ impl AppState {
     pub fn new(
         typesense_secret: TypesenseSecret,
         notion_client_id: NotionClientId,
-        notion_secret: NotionAccessSecret,
         pool: Pool<Postgres>,
         jwt_secret: String,
         google_auth_client_wrapper: Arc<Mutex<Option<BasicClient>>>,
@@ -47,7 +45,6 @@ impl AppState {
         Self {
             typesense_secret,
             notion_client_id,
-            notion_secret,
             pool,
             jwt_secret,
             google_auth_client_wrapper,
@@ -58,7 +55,7 @@ impl AppState {
             google_client_secret,
             no_reply_email_id,
             no_reply_secret,
-            no_reply_server
+            no_reply_server,
         }
     }
 
