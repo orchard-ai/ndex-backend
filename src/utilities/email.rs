@@ -11,9 +11,9 @@ pub fn send_signup_confirmation(
     credentials_password: &str,
     credentials_server: &str,
 ) {
-    let email = Message::builder() 
-        .from(credential_username.parse().unwrap()) 
-        .to(receiver.parse().unwrap()) 
+    let email = Message::builder()
+        .from(credential_username.parse().unwrap())
+        .to(receiver.parse().unwrap())
         .header(ContentType::TEXT_HTML)
         .subject("Email confirmation - Ndex") 
         .body(format!("
