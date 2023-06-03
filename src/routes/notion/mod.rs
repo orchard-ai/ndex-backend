@@ -122,9 +122,7 @@ async fn get_pages(
             let headers = response.headers();
             if let Some(retry_after) = headers.get("Retry-After") {
                 let wait_time = retry_after.to_str()?.parse::<u64>()?;
-                println!(
-                    "We're being rate-limited. Retry after: {wait_time} seconds"
-                );
+                println!("We're being rate-limited. Retry after: {wait_time} seconds");
                 sleep(Duration::from_secs(wait_time)).await;
                 return get_pages(client, cursor, query).await;
             } else {
