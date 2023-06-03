@@ -116,9 +116,7 @@ async fn get_message_object(
     message_id: &str,
     gmail: &str,
 ) -> Result<ParsedMail, Error> {
-    let req_url = format!(
-        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}"
-    );
+    let req_url = format!("https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}");
     let response = client.get(req_url).send().await?;
     let loaded: ParsedMail = response.json().await?;
     let typesense_insert = parse_gmail(&loaded, gmail);

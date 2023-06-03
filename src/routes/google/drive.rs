@@ -93,9 +93,7 @@ async fn retrieve_file_list(
     let params =
             "fields=kind,incompleteSearch,nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,webViewLink,owners)";
     if let Some(page_id) = page_cursor {
-        url = format!(
-            "https://www.googleapis.com/drive/v3/files?{params}&pageToken={page_id}",
-        )
+        url = format!("https://www.googleapis.com/drive/v3/files?{params}&pageToken={page_id}",)
     } else {
         url = format!("https://www.googleapis.com/drive/v3/files?{params}")
     }
