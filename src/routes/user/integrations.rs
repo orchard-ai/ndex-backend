@@ -2,6 +2,7 @@ use axum::{extract::State, response::IntoResponse, Json};
 use http::{HeaderMap, StatusCode};
 use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
+use tracing::info;
 
 use crate::{
     models::integration::{AddIntegration, IntegrationResponse, Platform},
@@ -19,14 +20,12 @@ pub async fn get_integrations(
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let id = claims.sub.parse::<i64>().unwrap();
-        dbg!(&id);
         let q = r#"SELECT email, oauth_provider_id, scopes, platform FROM userdb.integrations 
             WHERE user_id = $1"#;
         let results = sqlx::query_as::<_, IntegrationResponse>(q)
             .bind(id)
             .fetch_all(&pool)
             .await?;
-        dbg!(&results);
         return Ok((StatusCode::OK, Json(json!({ "integrations": results }))));
     }
     Err(UserError::Unauthorized("Invalid token".to_string()))
@@ -40,6 +39,7 @@ pub async fn add_integration(
 ) -> impl IntoResponse {
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
+    info!("Adding user integration!");
     dbg!(&payload);
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let user_id = claims.sub.parse::<i64>().unwrap();
