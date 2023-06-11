@@ -49,8 +49,6 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/get_all", get(get_users))
         .route("/user/get_typesense_key", get(get_api_key))
         .route("/user/email_verification/:hash=", get(confirm_hash))
-        .route("/google/auth", get(google_auth))
-        .route("/google/auth/response", get(google_auth_sucess))
         .route("/user/get_email", get(get_email))
         .route("/google/index_calendar", post(index_gcal_handler))
         .route("/google/index_gmail", post(index_gmail_handler))

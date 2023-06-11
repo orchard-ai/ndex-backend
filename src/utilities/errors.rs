@@ -17,6 +17,7 @@ pub enum UserError {
 pub enum ConfirmationError {
     ConfirmationHashInvalid,
     BadRequest(String),
+    InternalServerError(String)
 }
 
 impl IntoResponse for UserError {
@@ -56,6 +57,7 @@ impl IntoResponse for ConfirmationError {
         let (status, error_message) = match self {
             Self::ConfirmationHashInvalid => (StatusCode::INTERNAL_SERVER_ERROR, "hash invalid"),
             Self::BadRequest(ref msg) => (StatusCode::BAD_REQUEST, msg.as_str()),
+            Self::InternalServerError(ref msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.as_str()),
         };
         (status, Json(json!({ "error": error_message }))).into_response()
     }

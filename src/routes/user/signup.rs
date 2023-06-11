@@ -100,20 +100,22 @@ pub async fn create_new_user(
         token,
     };
 
-    let confirmation_link: String = match generate_confirmation_link(id, pool).await {
-        Ok(link) => link,
-        Err(err) => {
-            eprintln!("Error generating confirmation link: {}", err);
-            String::default()
+    match generate_confirmation_link(id, pool).await {
+        Ok(confirmation_link) => {
+            send_signup_confirmation(
+                &email,
+                &confirmation_link,
+                &no_reply_email_id.0,
+                &no_reply_secret.0,
+                &no_reply_server.0,
+            );
+        }
+        Err(_) => {
+            return Err(UserError::InternalServerError(
+                "We were not able to generate a confirmation link".to_string()
+            ));
         }
     };
-    send_signup_confirmation(
-        &email,
-        &confirmation_link,
-        &no_reply_email_id.0,
-        &no_reply_secret.0,
-        &no_reply_server.0,
-    );
 
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }
@@ -128,11 +130,10 @@ async fn generate_confirmation_link(
 
     // Insert the hash_key into the confirmation_hash table
     sqlx::query("INSERT INTO userdb.confirmation_hash (hash_key, user_id) VALUES ($1, $2)")
+        .bind(&hash)    
         .bind(user_id)
-        .bind(&hash)
         .execute(&pool)
-        .await
-        .expect("Failed to insert hash_key into the database");
+        .await?;
 
     Ok(format!("{}{}", base_url, hash))
 }
@@ -236,28 +237,28 @@ pub async fn confirm_hash(
 ) -> Result<(), ConfirmationError> {
     // Retrieve user_id based on the hash_key
     let sql = "SELECT user_id FROM userdb.confirmation_hash WHERE hash_key=$1".to_string();
-    let user_id: Option<i64> = sqlx::query_scalar(&sql)
+    match sqlx::query_scalar::<_, i64>(&sql)
         .bind(&hash)
         .fetch_optional(&pool)
-        .await?;
-    
-    // Check if user_id was found for hash_key provided
-    if let Some(user_id) = user_id {
-        // Update the user's active field to TRUE based on the retrieved user_id and return
-        sqlx::query("UPDATE userdb.users SET active = TRUE WHERE id = $1")
-            .bind(user_id)
-            .execute(&pool)
-            .await?;
+        .await {
+            Ok(Some(user_id)) => {
+                // Update the user's active field to TRUE based on the retrieved user_id and return
+                sqlx::query("UPDATE userdb.users SET active = TRUE WHERE id = $1")
+                    .bind(user_id)
+                    .execute(&pool)
+                    .await?;
 
-        // Delete the hash_key from the confirmation_hash table
-        sqlx::query("DELETE FROM userdb.confirmation_hash WHERE user_id = $1")
-            .bind(user_id)
-            .execute(&pool)
-            .await?;
+                // Delete the hash_key from the confirmation_hash table
+                sqlx::query("DELETE FROM userdb.confirmation_hash WHERE user_id = $1")
+                    .bind(user_id)
+                    .execute(&pool)
+                    .await?;
         
-        Ok(())
-    } else {
-        // Handle case when no user_id is found for the provided hash_key
-        Err(ConfirmationError::ConfirmationHashInvalid)
-    }
+                Ok(())
+            }
+            // Handle case when no user_id is found for the provided hash_key
+            Ok(None) | Err(_) => {
+                Err(ConfirmationError::ConfirmationHashInvalid)
+            }
+        }
 }
