@@ -37,7 +37,7 @@ pub async fn index_gmail_handler(
         let access_token = get_access_token(&pool, &user_id, &email, Platform::Google).await?;
         index(&access_token, &user_id, &email)
             .await
-            .map_err(|e| UserError::InternalServerError(e.to_string()))?;
+            .map_err(UserError::InternalServerError)?;
         match batch_index(&typesense_secret.0, &user_id, Product::GMail).await {
             Ok(_) => {
                 return Ok((
@@ -47,7 +47,7 @@ pub async fn index_gmail_handler(
             }
             Err(e) => {
                 dbg!(&e);
-                return Err(UserError::InternalServerError(e.to_string()));
+                return Err(UserError::InternalServerError(e));
             }
         }
     }
@@ -55,11 +55,11 @@ pub async fn index_gmail_handler(
 }
 
 async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String, String> {
-    let filepath = format!("google_mail_{}.jsonl", user_id);
+    let filepath = format!("google_mail_{user_id}.jsonl");
     File::create(&filepath).map_err(|e| e.to_string())?;
 
     let mut headers = HeaderMap::new();
-    let bearer = format!("Bearer {}", access_token);
+    let bearer = format!("Bearer {access_token}");
     headers.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     let client = Client::builder().default_headers(headers).build().unwrap();
 
@@ -91,8 +91,7 @@ async fn retrieve_message_ids(client: &Client) -> Result<Vec<Message>, Error> {
         let next_url: String;
         if let Some(page_cursor) = cursor {
             next_url = format!(
-            "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=500&pageToken={}",
-            page_cursor
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=500&pageToken={page_cursor}"
             );
         } else {
             next_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=500"
@@ -117,10 +116,7 @@ async fn get_message_object(
     message_id: &str,
     gmail: &str,
 ) -> Result<ParsedMail, Error> {
-    let req_url = format!(
-        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{}",
-        message_id
-    );
+    let req_url = format!("https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}");
     let response = client.get(req_url).send().await?;
     let loaded: ParsedMail = response.json().await?;
     let typesense_insert = parse_gmail(&loaded, gmail);
@@ -148,7 +144,7 @@ fn parse_gmail(msg: &ParsedMail, gmail: &str) -> TypesenseInsert {
     dbg!(&email_link);
     TypesenseInsert {
         account_email: gmail.to_owned(),
-        id: id,
+        id,
         title: subject,
         contents: snippet,
         url: email_link,

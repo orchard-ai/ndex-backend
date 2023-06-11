@@ -4,8 +4,8 @@ use crate::{
     utilities::{errors::{
         UserError, ConfirmationError}
     },
-    utilities::token_wrapper::{TypesenseSecret, NoReplyEmailId, NoReplySecret, NoReplyServer},
-    utilities::email::{send_signup_confirmation},
+    utilities::email::send_signup_confirmation,
+    utilities::token_wrapper::{NoReplyEmailId, NoReplySecret, NoReplyServer, TypesenseSecret},
 };
 use axum::{
     extract::{Json, Path, State},
@@ -13,7 +13,7 @@ use axum::{
 };
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{DateTime, Utc};
-use http::StatusCode;
+use http::{HeaderMap, StatusCode};
 use serde_json::json;
 use sqlx::{Pool, Postgres, Row};
 use validator::Validate;
@@ -21,15 +21,15 @@ use sha2::{Digest, Sha256};
 use rand::Rng;
 use hex;
 
-use super::{generate_token, SignUpForm, TokenResponse, UpdateUser};
+use super::{generate_token, validate_token, SignUpForm, TokenResponse, UpdateUser};
 
 pub async fn create_new_user(
     State(pool): State<Pool<Postgres>>,
     State(jwt_secret): State<String>,
     State(typesense_secret): State<TypesenseSecret>,
     State(no_reply_email_id): State<NoReplyEmailId>,
-    State(no_reply_secret):  State<NoReplySecret>,
-    State(no_reply_server):  State<NoReplyServer>,
+    State(no_reply_secret): State<NoReplySecret>,
+    State(no_reply_server): State<NoReplyServer>,
     Json(form): Json<SignUpForm>,
 ) -> impl IntoResponse {
     form.validate()?;
@@ -107,7 +107,13 @@ pub async fn create_new_user(
             String::default()
         }
     };
-    send_signup_confirmation(&email, &confirmation_link, &no_reply_email_id.0, &no_reply_secret.0, &no_reply_server.0);
+    send_signup_confirmation(
+        &email,
+        &confirmation_link,
+        &no_reply_email_id.0,
+        &no_reply_secret.0,
+        &no_reply_server.0,
+    );
 
     Ok((StatusCode::OK, serde_json::to_string(&res).unwrap()))
 }
@@ -149,15 +155,10 @@ pub async fn update_user(
     State(pool): State<Pool<Postgres>>,
     Json(payload): Json<UpdateUser>,
 ) -> Result<String, UserError> {
-    let account_type = match payload.account_type {
-        Some(acc_t) => Some(AccountType::from(acc_t)),
-        None => None,
-    };
-    let password_hash = if let Some(password) = payload.password {
-        Some(hash(password, DEFAULT_COST).unwrap())
-    } else {
-        None
-    };
+    let account_type = payload.account_type.map(AccountType::from);
+    let password_hash = payload
+        .password
+        .map(|password| hash(password, DEFAULT_COST).unwrap());
     dbg!(&account_type);
     let q = r#"--sql
         UPDATE userdb.users
@@ -208,12 +209,25 @@ pub async fn get_users(State(pool): State<Pool<Postgres>>) -> impl IntoResponse 
 }
 
 pub async fn delete_user(
-    Path(id): Path<i64>,
     State(pool): State<Pool<Postgres>>,
-) -> Result<(), UserError> {
-    let q = r#"DELETE FROM userdb.users WHERE id = $1"#;
-    sqlx::query(q).bind(id).execute(&pool).await?;
-    Ok(())
+    State(jwt_secret): State<String>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let auth_header = headers.get("Authorization").unwrap();
+    let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
+    if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
+        let user_id = claims.sub;
+        let q = r#"DELETE FROM userdb.users WHERE id = $1"#;
+        let result = sqlx::query_as::<_, User>(q)
+            .bind(user_id)
+            .fetch_one(&pool)
+            .await;
+        match result {
+            Ok(_) => return Ok((StatusCode::OK, Json(json!({"message": "user deleted"})))),
+            Err(_) => return Err(UserError::Unauthorized("User not found".to_string())),
+        };
+    }
+    Err(UserError::Unauthorized("Wrong token".to_string()))
 }
 
 pub async fn confirm_hash(

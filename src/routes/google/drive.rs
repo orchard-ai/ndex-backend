@@ -40,7 +40,7 @@ pub async fn index_gdrive_handler(
         let access_token = get_access_token(&pool, &user_id, &email, Platform::Google).await?;
         index(&access_token, &user_id, &email)
             .await
-            .map_err(|e| UserError::InternalServerError(e.to_string()))?;
+            .map_err(UserError::InternalServerError)?;
         match batch_index(&typesense_secret.0, &user_id, Product::GDrive).await {
             Ok(_) => {
                 return Ok((
@@ -50,7 +50,7 @@ pub async fn index_gdrive_handler(
             }
             Err(e) => {
                 dbg!(&e);
-                return Err(UserError::InternalServerError(e.to_string()));
+                return Err(UserError::InternalServerError(e));
             }
         }
     }
@@ -58,11 +58,11 @@ pub async fn index_gdrive_handler(
 }
 
 async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String, String> {
-    let filepath = format!("google_calendar_events_{}.jsonl", user_id);
+    let filepath = format!("google_calendar_events_{user_id}.jsonl");
     File::create(&filepath).map_err(|e| e.to_string())?;
 
     let mut headers = HeaderMap::new();
-    let bearer = format!("Bearer {}", access_token);
+    let bearer = format!("Bearer {access_token}");
     headers.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     let client = Client::builder().default_headers(headers).build().unwrap();
 
@@ -93,12 +93,9 @@ async fn retrieve_file_list(
     let params =
             "fields=kind,incompleteSearch,nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,webViewLink,owners)";
     if let Some(page_id) = page_cursor {
-        url = format!(
-            "https://www.googleapis.com/drive/v3/files?{}&pageToken={}",
-            params, page_id,
-        )
+        url = format!("https://www.googleapis.com/drive/v3/files?{params}&pageToken={page_id}",)
     } else {
-        url = format!("https://www.googleapis.com/drive/v3/files?{}", params)
+        url = format!("https://www.googleapis.com/drive/v3/files?{params}")
     }
     dbg!(&url);
     let response: GDriveResponse = client.get(&url).send().await?.json().await?;

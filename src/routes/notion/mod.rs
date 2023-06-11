@@ -42,14 +42,14 @@ RESPONSE:
 
 async fn index(access_token: &str, user_id: &str, query: &str) -> Result<String, String> {
     let mut headers = HeaderMap::new();
-    let bearer = format!("Bearer {}", access_token);
+    let bearer = format!("Bearer {access_token}");
     headers.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     headers.append(
         "notion-version",
         HeaderValue::from_str("2022-06-28").unwrap(),
     );
     let client = Client::builder().default_headers(headers).build().unwrap();
-    let filepath = format!("notion_blocks_{}.jsonl", user_id);
+    let filepath = format!("notion_blocks_{user_id}.jsonl");
     File::create(&filepath).map_err(|e| e.to_string())?;
 
     let mut seen_ids: HashSet<String> = HashSet::new();
@@ -66,14 +66,14 @@ async fn index(access_token: &str, user_id: &str, query: &str) -> Result<String,
             pages.insert(res.id.clone(), res);
         }
         if next_cursor != Value::Null {
-            cursor = Some(next_cursor.to_string().replace("\"", ""));
+            cursor = Some(next_cursor.to_string().replace('\"', ""));
         } else {
             break;
         }
     }
     append_json_lines(&filepath, pages.values()).unwrap();
     for (parent_id, parent) in &pages {
-        let page_blocks = get_page_blocks(&client, &parent_id).await;
+        let page_blocks = get_page_blocks(&client, parent_id).await;
         let mut block_objects: Vec<TypesenseInsert> = vec![];
         info!("Parsing blocks for page {}", parent_id);
         for block in page_blocks {
@@ -122,10 +122,7 @@ async fn get_pages(
             let headers = response.headers();
             if let Some(retry_after) = headers.get("Retry-After") {
                 let wait_time = retry_after.to_str()?.parse::<u64>()?;
-                println!(
-                    "We're being rate-limited. Retry after: {} seconds",
-                    wait_time
-                );
+                println!("We're being rate-limited. Retry after: {wait_time} seconds");
                 sleep(Duration::from_secs(wait_time)).await;
                 return get_pages(client, cursor, query).await;
             } else {
@@ -152,11 +149,11 @@ fn parse_pages(response: SearchResponse) -> Vec<TypesenseInsert> {
             Some(title) => title.title[0].plain_text.to_string(),
             None => "".to_string(),
         };
-        if &prop_title == "" && &prop_name == "" {
+        if prop_title.is_empty() && prop_name.is_empty() {
             continue;
         }
         let id = result.id;
-        let title = format!("{}{}", prop_name, prop_title).replace("\"", "");
+        let title = format!("{prop_name}{prop_title}").replace('\"', "");
         let contents = title.clone();
         let url = result.url;
         let platform = Product::Notion;

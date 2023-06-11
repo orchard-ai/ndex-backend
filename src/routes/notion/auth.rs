@@ -30,7 +30,7 @@ pub async fn obtain_access_token(Json(request): Json<NotionAuthRequest>) -> impl
 
     let auth_header_value = format!(
         "Basic {}",
-        base64::encode_block(&format!("{}:{}", &notion_client_id, &notion_secret).as_bytes())
+        base64::encode_block(format!("{}:{}", &notion_client_id, &notion_secret).as_bytes())
     );
     headers.insert(
         "Authorization",

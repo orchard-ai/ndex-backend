@@ -5,7 +5,6 @@ use crate::{
             auth::obtain_google_access_token, calendar::index_gcal_handler,
             drive::index_gdrive_handler, mail::index_gmail_handler,
         },
-        login::google_auth::{google_auth, google_auth_sucess},
         notion::{
             auth::obtain_access_token,
             index::{index_notion_handler, single_notion_search_handler},
@@ -15,7 +14,9 @@ use crate::{
             schema_control::{delete_schema, retrieve_all_schema},
         },
         user::{
-            integrations::{add_integration, get_api_key, get_integrations, remove_integration},
+            integrations::{
+                add_integration, get_api_key, get_email, get_integrations, remove_integration,
+            },
             login::login,
             migrate::migrate,
             signup::{create_new_user, delete_user, get_users, update_user, confirm_hash},
@@ -23,7 +24,7 @@ use crate::{
     },
 };
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use http::{header, HeaderValue};
@@ -41,7 +42,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/signup", post(create_new_user))
         .route("/user/login", post(login))
         .route("/user/update/:id=", post(update_user))
-        .route("/user/delete/:id=", get(delete_user))
+        .route("/user/delete", delete(delete_user))
         .route("/user/integrations", get(get_integrations))
         .route("/user/add_integration", post(add_integration))
         .route("/user/remove_integration", post(remove_integration))
@@ -50,6 +51,7 @@ pub fn create_router(app_state: AppState) -> Router {
         .route("/user/email_verification/:hash=", get(confirm_hash))
         .route("/google/auth", get(google_auth))
         .route("/google/auth/response", get(google_auth_sucess))
+        .route("/user/get_email", get(get_email))
         .route("/google/index_calendar", post(index_gcal_handler))
         .route("/google/index_gmail", post(index_gmail_handler))
         .route("/google/index_drive", post(index_gdrive_handler))
