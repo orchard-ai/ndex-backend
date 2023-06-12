@@ -27,15 +27,14 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
-use http::{header, HeaderValue, Method};
+use http::{header, HeaderValue};
 use tower_http::cors::CorsLayer;
 use tracing::info;
 
 pub fn create_router(app_state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:5173".parse::<HeaderValue>().unwrap())
-        .allow_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION])
-        .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::PUT]);
+        .allow_headers(vec![header::CONTENT_TYPE, header::AUTHORIZATION]);
 
     Router::new()
         .route("/", get(root))

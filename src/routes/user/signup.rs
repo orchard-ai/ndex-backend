@@ -174,9 +174,11 @@ pub async fn delete_user(
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
-        let user_id = claims.sub.parse::<i64>().unwrap();
-        let result = sqlx::query!("DELETE FROM userdb.users WHERE id = $1", user_id)
-            .execute(&pool)
+        let user_id = claims.sub;
+        let q = r#"DELETE FROM userdb.users WHERE id = $1"#;
+        let result = sqlx::query_as::<_, User>(q)
+            .bind(user_id)
+            .fetch_one(&pool)
             .await;
         match result {
             Ok(_) => return Ok((StatusCode::OK, Json(json!({"message": "user deleted"})))),
