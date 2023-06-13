@@ -66,13 +66,25 @@ async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String,
     headers.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     let client = Client::builder().default_headers(headers).build().unwrap();
     let calendars: GCalendarList = get_calendars(&client).await.map_err(|e| e.to_string())?;
+
+    let mut tasks = Vec::new();
     for cal in &calendars.items {
         let calendar_id = cal.id.to_string();
-        let events_list = retrieve_events(&client, calendar_id)
-            .await
-            .map_err(|e| e.to_string())?;
-        let parsed_events = parse_events(events_list, email);
-        append_json_lines(&filepath, &parsed_events).map_err(|e| e.to_string())?;
+        let client = client.clone();
+        let filepath = filepath.clone();
+        let email = email.to_string();
+        let task = tokio::spawn(async move {
+            let events_list = retrieve_events(&client, calendar_id)
+                .await
+                .map_err(|e| e.to_string())?;
+            let parsed_events = parse_events(events_list, &email);
+            append_json_lines(&filepath, parsed_events).map_err(|e| e.to_string())?;
+            Ok::<_, String>(())
+        });
+        tasks.push(task);
+    }
+    for task in tasks {
+        task.await.map_err(|e| e.to_string())??;
     }
     Ok("Indexed".to_string())
 }
