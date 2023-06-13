@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fs::File;
 
 use crate::models::gcalendar::GCalendarList;
@@ -14,7 +15,7 @@ use axum::response::IntoResponse;
 use axum::{extract::State, Json};
 use chrono::DateTime;
 use http::{HeaderMap, HeaderValue, StatusCode};
-use reqwest::{Client, Error};
+use reqwest::Client;
 use serde_json::json;
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
@@ -67,18 +68,16 @@ async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String,
     dbg!(&calendars);
     for cal in &calendars.items {
         let calendar_id = cal.id.to_string();
-        let event_list = retrieve_events(&client, calendar_id)
+        let events_list = retrieve_events(&client, calendar_id)
             .await
             .map_err(|e| e.to_string())?;
-        if let Some(items) = event_list.items {
-            let parsed_events = parse_events(items, email);
-            append_json_lines(&filepath, &parsed_events).map_err(|e| e.to_string())?;
-        }
+        let parsed_events = parse_events(events_list, email);
+        append_json_lines(&filepath, &parsed_events).map_err(|e| e.to_string())?;
     }
     Ok("Indexed".to_string())
 }
 
-pub async fn get_calendars(client: &Client) -> Result<GCalendarList, Error> {
+pub async fn get_calendars(client: &Client) -> Result<GCalendarList, Box<dyn Error>> {
     let response = client
         .get("https://www.googleapis.com/calendar/v3/users/me/calendarList")
         .send()
@@ -87,12 +86,34 @@ pub async fn get_calendars(client: &Client) -> Result<GCalendarList, Error> {
     Ok(calendars)
 }
 
-pub async fn retrieve_events(client: &Client, calendar_id: String) -> Result<EventsList, Error> {
-    let url = format!("https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events/");
-    let response = client.get(url).send().await?;
-    let events: EventsList = response.json().await?;
-    dbg!(&events);
-    Ok(events)
+pub async fn retrieve_events(
+    client: &Client,
+    calendar_id: String,
+) -> Result<Vec<Event>, Box<dyn Error>> {
+    let mut next_page_token: Option<String> = None;
+    let mut url: String;
+    let mut events_list = vec![];
+    loop {
+        if let Some(page_token) = next_page_token {
+            url = format!("https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events?pageToken={page_token}");
+        } else {
+            url = format!("https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events/");
+        }
+        let response: reqwest::Response = client.get(url).send().await?;
+        match response.status() {
+            reqwest::StatusCode::OK => {
+                let mut events: EventsList = response.json().await?;
+                events_list.append(&mut events.items);
+                if let Some(next_page) = events.next_page_token {
+                    next_page_token = Some(next_page);
+                } else {
+                    break;
+                }
+            }
+            _ => return Err(response.text().await?.into()),
+        }
+    }
+    Ok(events_list)
 }
 
 fn parse_events(events: Vec<Event>, email: &str) -> Vec<TypesenseInsert> {
