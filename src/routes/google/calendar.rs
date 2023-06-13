@@ -19,6 +19,7 @@ use reqwest::Client;
 use serde_json::json;
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
+use tracing::error;
 use tracing::info;
 
 use super::IndexGoogleRequest;
@@ -65,7 +66,6 @@ async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String,
     headers.append("Authorization", HeaderValue::from_str(&bearer).unwrap());
     let client = Client::builder().default_headers(headers).build().unwrap();
     let calendars: GCalendarList = get_calendars(&client).await.map_err(|e| e.to_string())?;
-    dbg!(&calendars);
     for cal in &calendars.items {
         let calendar_id = cal.id.to_string();
         let events_list = retrieve_events(&client, calendar_id)
@@ -110,7 +110,13 @@ pub async fn retrieve_events(
                     break;
                 }
             }
-            _ => return Err(response.text().await?.into()),
+            reqwest::StatusCode::NOT_FOUND => return Ok(events_list),
+            _ => {
+                dbg!(&response);
+                let error = response.text().await?;
+                error!("{}", &error);
+                return Err(error.into());
+            }
         }
     }
     Ok(events_list)
