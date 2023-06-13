@@ -40,7 +40,6 @@ pub async fn add_integration(
     let auth_header = headers.get("Authorization").unwrap();
     let jwt = auth_header.to_str().unwrap().replace("Bearer ", "");
     info!("Adding user integration!");
-    dbg!(&payload);
     if let Ok(claims) = validate_token(&jwt, &jwt_secret) {
         let user_id = claims.sub.parse::<i64>().unwrap();
         let email = payload.email;
