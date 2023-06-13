@@ -40,7 +40,6 @@ pub async fn login(
                 user_id: id.to_string(),
                 token,
             };
-            dbg!(&res);
             if let Some(password) = payload.password {
                 if verify(&password, &user.password_hash.unwrap()).is_ok() {
                     update_api_key(typesense_secret.0.to_owned(), &pool, user.id).await?;
