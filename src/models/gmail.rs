@@ -1,6 +1,6 @@
 use serde::de::SeqAccess;
 use serde::de::{Deserializer, Visitor};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use std::fmt;
@@ -65,7 +65,7 @@ pub struct Header {
 pub struct Part {
     pub body: PartBody,
     pub filename: String,
-    #[serde(deserialize_with = "headers_map_from_vec")]
+    #[serde(default, deserialize_with = "headers_map_from_vec")]
     pub headers: HashMap<String, Vec<String>>,
     pub mime_type: String,
     pub part_id: String,

@@ -15,11 +15,12 @@ use axum::response::IntoResponse;
 use axum::{extract::State, Json};
 use chrono::DateTime;
 use http::{HeaderMap, HeaderValue, StatusCode};
-use reqwest::{Client, Error};
+use reqwest::Client;
 use serde_json::json;
 use serde_jsonlines::append_json_lines;
 use sqlx::{Pool, Postgres};
-use tracing::{debug, info};
+use std::error::Error;
+use tracing::{debug, error, info};
 
 pub async fn index_gmail_handler(
     State(jwt_secret): State<String>,
@@ -70,7 +71,7 @@ async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String,
 
     let mut parsed_messages: Vec<TypesenseInsert> = vec![];
     for msg in message_ids {
-        let loaded = get_message_object(&client, &msg.id, email)
+        let loaded = get_message_object(&client, &msg.id)
             .await
             .map_err(|e| e.to_string())?;
         let typesense_entry = parse_gmail(&loaded, email);
@@ -83,7 +84,7 @@ async fn index(access_token: &str, user_id: &str, email: &str) -> Result<String,
     Ok("Indexed".to_string())
 }
 
-async fn retrieve_message_ids(client: &Client) -> Result<Vec<Message>, Error> {
+async fn retrieve_message_ids(client: &Client) -> Result<Vec<Message>, Box<dyn Error>> {
     info!("Retrieving messages list");
     let mut cursor: Option<String> = None;
     let mut message_list: Vec<Message> = vec![];
@@ -98,13 +99,24 @@ async fn retrieve_message_ids(client: &Client) -> Result<Vec<Message>, Error> {
                 .to_string();
         }
         let response = client.get(next_url).send().await?;
-        let messages_list: MessagesList = response.json().await?;
-        info!("Retrieved {} messages", messages_list.messages.len());
-        message_list.extend(messages_list.messages);
-        if let Some(next_page_cursor) = messages_list.next_page_token {
-            cursor = Some(next_page_cursor);
-        } else {
-            break;
+        let response_text = response.text().await?;
+        match serde_json::from_str::<MessagesList>(&response_text) {
+            Ok(messages_list) => {
+                info!("Retrieved {} messages", messages_list.messages.len());
+                message_list.extend(messages_list.messages);
+                if let Some(next_page_cursor) = messages_list.next_page_token {
+                    cursor = Some(next_page_cursor);
+                } else {
+                    break;
+                }
+            }
+            Err(e) => {
+                error!(
+                    "Error parsing JSON: {}\nOriginal response: {}",
+                    e, response_text
+                );
+                return Err(Box::new(e));
+            }
         }
     }
     info!("Finished retrieving messages list");
@@ -114,14 +126,20 @@ async fn retrieve_message_ids(client: &Client) -> Result<Vec<Message>, Error> {
 async fn get_message_object(
     client: &Client,
     message_id: &str,
-    gmail: &str,
-) -> Result<ParsedMail, Error> {
+) -> Result<ParsedMail, Box<dyn Error>> {
     let req_url = format!("https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}");
     let response = client.get(req_url).send().await?;
-    let loaded: ParsedMail = response.json().await?;
-    let typesense_insert = parse_gmail(&loaded, gmail);
-    dbg!(typesense_insert);
-    Ok(loaded)
+    let response_text = response.text().await?;
+    match serde_json::from_str::<ParsedMail>(&response_text) {
+        Ok(loaded) => Ok(loaded),
+        Err(e) => {
+            error!(
+                "Error parsing JSON: {}\nOriginal response: {}",
+                e, response_text
+            );
+            Err(Box::new(e))
+        }
+    }
 }
 
 fn parse_gmail(msg: &ParsedMail, gmail: &str) -> TypesenseInsert {
@@ -141,7 +159,6 @@ fn parse_gmail(msg: &ParsedMail, gmail: &str) -> TypesenseInsert {
         Err(_) => 0,
     };
     dbg!(&subject);
-    dbg!(&email_link);
     TypesenseInsert {
         account_email: gmail.to_owned(),
         id,

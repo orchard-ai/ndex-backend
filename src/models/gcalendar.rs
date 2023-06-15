@@ -7,7 +7,8 @@ pub struct GCalendarList {
     pub etag: String,
     pub items: Vec<GCalendar>,
     pub kind: String,
-    pub next_sync_token: String,
+    pub next_sync_token: Option<String>,
+    pub next_page_token: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
