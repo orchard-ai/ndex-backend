@@ -1,6 +1,6 @@
 use anyhow::Context;
 use dotenv::dotenv;
-use ndex::{
+use ndex_backend::{
     app_state::AppState,
     run,
     utilities::token_wrapper::{
