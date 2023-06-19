@@ -27,4 +27,4 @@ jobs:
             CI=true docker rm ndex-backend || true
             CI=true docker image prune -a
             CI=true docker pull xrli/ndex-backend@$(cat image-id)
-            CI=true docker run --name=workfall-rocket-rs -d -p 3001:3001 xrli/ndex-backend@$(cat image-id)
+            CI=true docker run --name=ndex-backend -d -p 3001:3001 xrli/ndex-backend@$(cat image-id)
