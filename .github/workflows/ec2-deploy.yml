@@ -1,0 +1,30 @@
+name: Deploy Docker Image
+
+on:
+  workflow_run:
+    workflows: ['Build Docker Image']
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get Docker image ID
+        uses: actions/download-artifact@v2
+        with:
+          name: image-id
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+          script: |
+            CI=true docker stop ndex-backend || true
+            CI=true docker rm ndex-backend || true
+            CI=true docker image prune -a
+            CI=true docker pull xrli/ndex-backend@$(cat image-id)
+            CI=true docker run --name=ndex-backend -d -p 3001:3001 --env NOTION_CLIENT_ID=${{ secrets.NOTION_CLIENT_ID}} --env TYPESENSE_SECRET=${{ secrets.TYPESENSE_SECRET }} --env GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} --env GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} --env DATABASE_URL=${{ secrets.DATABASE_URL }} --env JWT_SECRET=${{ secrets.JWT_SECRET }} --env NO_REPLY_EMAIL_ID=${{ secrets.NO_REPLY_EMAIL_ID }} --env NO_REPLY_SECRET=${{ secrets.NO_REPLY_SECRET }} --env NO_REPLY_SERVER=${{ secrets.NO_REPLY_SERVER }} xrli/ndex-backend@$(cat image-id)

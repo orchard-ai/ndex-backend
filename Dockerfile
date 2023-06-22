@@ -15,11 +15,14 @@ COPY ./Cargo.lock ./Cargo.lock
 RUN cargo build --release
 RUN rm src/*.rs
 
+COPY ./migrations ./migrations
+COPY ./.env ./.env
+
 # Copy the source code
 COPY ./src ./src
 
 # Build the application
-RUN rm ./target/release/deps/ndex-backend*
+RUN rm ./target/release/deps/*
 RUN cargo build --release
 
 # Stage 2: Preparing the final image
